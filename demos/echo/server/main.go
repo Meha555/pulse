@@ -18,7 +18,9 @@ func (p *EchoRouter) PreHandle(request ziface.IRequest) error {
 
 func (p *EchoRouter) Handle(request ziface.IRequest) error {
 	fmt.Println("Call Router Handle")
-	if nbytes, err := request.Conn().(*znet.Connection).Send(request.Data()); err != nil {
+	msg := request.Msg().(*znet.SeqedMsg)
+	log.Printf("ReadMsg: %d %s\n", msg.Serial(), string(msg.Body()))
+	if nbytes, err := request.Conn().(*znet.Connection).SendMsg(msg); err != nil {
 		log.Println("Write error:", err)
 		return err
 	} else {

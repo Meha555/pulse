@@ -7,8 +7,6 @@ import (
 	"my-zinx/zinx/zutils"
 	"net"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type Server struct {
@@ -89,7 +87,7 @@ func doStart(s *Server) {
 
 			// TODO 处理该新连接请求的业务方法, 此时应该有 handler, 它和 conn 是绑定的
 			// TODO 也许这个处理业务的dealConn服务端应该记录在map中，不然的话ConnID()没有生成的意义
-			dealConn := NewConnection(peer, uuid.New(), s.Router)
+			dealConn := NewConnection(peer, s.Router)
 			// 启动子协程处理业务
 			go dealConn.Open()
 		}

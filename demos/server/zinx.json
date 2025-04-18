@@ -1,9 +1,0 @@
-{
-    "server": {
-        "name": "New MY-ZINX Server",
-        "host": "127.0.0.1",
-        "port": 3333,
-        "max_conn": 100,
-        "max_packet_size": 4096
-    }
-}

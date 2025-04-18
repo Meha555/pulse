@@ -33,17 +33,22 @@ const confFile = "zinx.json"
 
 var Conf *zConfig
 
+// 这里用init()函数，保证Conf不会是空指针
 func init() {
 	// 设置 Conf 的默认值
 	Conf = &zConfig{
 		Server: zServerConf{
 			Host:          "0.0.0.0",
 			Name:          "MY-ZINX Server",
-			Port:          8999,
+			Port:          3333,
 			MaxConn:       10,
 			MaxPacketSize: 4096,
 		},
 	}
+}
+
+// 这里不用init()函数的原因是，不想让zinx的客户端用这个库也会加载服务端的配置文件
+func Init() {
 	path := os.Getenv("MY_ZINK_CONFIG_PATH")
 	if path == "" {
 		path, _ = os.Getwd()
@@ -51,7 +56,7 @@ func init() {
 	// 使用 path/filepath 库的 Join 函数来拼接路径，避免路径分隔符数量不对的问题
 	confPath := filepath.Join(path, confFile)
 	if err := Conf.Reload(confPath); err != nil {
-		log.Panicf("Loading config from %s failed", confPath)
+		log.Printf("Loading config from %s failed", confPath)
 	}
 	log.Println(*Conf)
 }

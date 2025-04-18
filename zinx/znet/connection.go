@@ -2,6 +2,8 @@ package znet
 
 import (
 	"errors"
+	"fmt"
+	"io"
 	"log"
 	"my-zinx/zinx/ziface"
 	"net"
@@ -29,10 +31,10 @@ type Connection struct {
 	exitChan chan struct{}
 }
 
-func NewConnection(conn *net.TCPConn, connID uuid.UUID, router ziface.IRouter) *Connection {
+func NewConnection(conn *net.TCPConn, router ziface.IRouter) *Connection {
 	return &Connection{
 		conn:     conn,
-		connID:   connID,
+		connID:   uuid.New(),
 		isClosed: false,
 		router:   router,
 		exitChan: make(chan struct{}, 1), // 这里设置为 1，确保至少有一个缓冲区，防止写入时没人读导致阻塞，或者反之
@@ -88,6 +90,42 @@ func (c Connection) Recv(data []byte) (int, error) {
 	return c.conn.Read(data)
 }
 
+func (c Connection) SendMsg(msg *SeqedMsg) (int, error) {
+	if c.isClosed {
+		return 0, errors.New("connection is closed")
+	}
+	data, err := Marshal(msg)
+	if err != nil {
+		return 0, err
+	}
+	return c.conn.Write(data)
+}
+
+func (c Connection) RecvMsg(msg *SeqedMsg) error {
+	if c.isClosed {
+		return errors.New("connection is closed")
+	}
+	headerData := make([]byte, msg.HeaderLen())
+	if _, err := io.ReadFull(c.conn, headerData); err != nil {
+		return fmt.Errorf("read header error: %v", err)
+	}
+	if err := Unmarshal(headerData, msg, false); err != nil {
+		return fmt.Errorf("unmarshal header err: %v", err)
+	}
+	// 读取负载
+	if msg.BodyLen() <= 0 {
+		return nil
+	}
+	bodyData := make([]byte, msg.BodyLen())
+	if _, err := io.ReadFull(c.conn, bodyData); err != nil {
+		return fmt.Errorf("read body error: %v", err)
+	}
+	if err := UmarshalBodyOnly(bodyData, int(msg.BodyLen()), msg); err != nil {
+		return fmt.Errorf("Unmarshal body error: %v", err)
+	}
+	return nil
+}
+
 func (c Connection) LocalAddr() net.Addr {
 	return c.conn.LocalAddr()
 }
@@ -107,19 +145,16 @@ func (c *Connection) StartReader() {
 	defer c.Close() // 确保连接能被关闭
 
 	for {
-		// 读取对端请求数据
-		buf := make([]byte, 512)
-		nbytes, err := c.conn.Read(buf)
-		if err != nil {
-			log.Println("Read error:", err)
+		msg := &SeqedMsg{}
+		if err := c.RecvMsg(msg); err != nil {
+			log.Println("RecvMsg error:", err)
 			c.exitChan <- struct{}{} // 通知 Open() 方法退出
-			continue                 // 允许这次没拿到数据，下次再拿
+			return
 		}
-
 		// 封装请求数据
 		req := &Request{
 			conn: c,
-			data: buf[:nbytes],
+			msg:  msg,
 		}
 		// 执行指定的业务处理数据
 		go func(request ziface.IRequest) {

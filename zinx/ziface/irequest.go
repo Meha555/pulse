@@ -5,6 +5,8 @@ package ziface
 // IRequest
 // 作为Router的数据源，封装来自客户端的请求消息，此后需要什么数据都可以从该对象中获取
 type IRequest interface {
-	Conn() IConnection // 获取连接
-	Data() []byte      // 获取请求数据
+	// 获取连接
+	Conn() IConnection
+	// 获取请求数据
+	Msg() IPacket
 }
