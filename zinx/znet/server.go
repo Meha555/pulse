@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"my-zinx/zinx/ziface"
+	"my-zinx/zinx/zutils"
 	"net"
 	"time"
 
@@ -20,20 +21,20 @@ type Server struct {
 	maxConnCount uint // 最大连接数
 }
 
-func NewServer(name string, port uint16) ziface.IServer {
+func NewServer() ziface.IServer {
 	return &Server{
-		Name:      name,
+		Name:      zutils.Conf.Server.Name,
 		IPVersion: "tcp4",
-		Ip:        "0.0.0.0",
-		Port:      port,
+		Ip:        zutils.Conf.Server.Host,
+		Port:      zutils.Conf.Server.Port,
 		// Router:       make([]ziface.IRouter, 0),
 		Router:       nil,
-		maxConnCount: 100,
+		maxConnCount: zutils.Conf.Server.MaxConn,
 	}
 }
 
 func (s *Server) Start() {
-	log.Println("Server Start")
+	log.Printf("Server Start with config: %+v\n", zutils.Conf)
 	doStart(s)
 }
 

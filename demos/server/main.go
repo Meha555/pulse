@@ -33,7 +33,7 @@ func (p *EchoRouter) PostHandle(request ziface.IRequest) error {
 }
 
 func main() {
-	s := znet.NewServer("[ZINX v0.3]", 3333)
+	s := znet.NewServer()
 	s.AddRouter(&EchoRouter{})
 	s.Start()
 	s.Serve()
