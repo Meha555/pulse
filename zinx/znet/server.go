@@ -15,16 +15,19 @@ type Server struct {
 	IPVersion string
 	Ip        string
 	Port      uint16
+	Router    ziface.IRouter
 
 	maxConnCount uint // 最大连接数
 }
 
 func NewServer(name string, port uint16) ziface.IServer {
 	return &Server{
-		Name:         name,
-		IPVersion:    "tcp4",
-		Ip:           "0.0.0.0",
-		Port:         port,
+		Name:      name,
+		IPVersion: "tcp4",
+		Ip:        "0.0.0.0",
+		Port:      port,
+		// Router:       make([]ziface.IRouter, 0),
+		Router:       nil,
 		maxConnCount: 100,
 	}
 }
@@ -42,6 +45,11 @@ func (s *Server) Serve() {
 func (s *Server) Stop() {
 	log.Println("Server Stop")
 	doStop(s)
+}
+
+func (s *Server) AddRouter(router ziface.IRouter) {
+	// s.Router = append(s.Router, router)
+	s.Router = router
 }
 
 // 确保 Server 实现了 ziface.IServer 的所有方法（让编译器帮我们检查）
@@ -78,21 +86,9 @@ func doStart(s *Server) {
 				continue
 			}
 
-			// TODO 设置服务器最大连接控制, 如果超过最大连接, 则关闭此新的连接
-
 			// TODO 处理该新连接请求的业务方法, 此时应该有 handler, 它和 conn 是绑定的
-			// 将裸的socket包装为一个Connection对象, Server 和 Client 建立连接之后, 新建一个连接对象, 并将具体的业务与连接绑定
 			// TODO 也许这个处理业务的dealConn服务端应该记录在map中，不然的话ConnID()没有生成的意义
-			dealConn := NewConnection(peer, uuid.New(), func(conn *net.TCPConn, data []byte, cnt int) error {
-				// 回显业务
-				if nbytes, err := conn.Write(data[:cnt]); err != nil {
-					log.Println("Write error:", err)
-					return err
-				} else {
-					log.Println("Write success, nbytes:", nbytes)
-					return nil
-				}
-			})
+			dealConn := NewConnection(peer, uuid.New(), s.Router)
 			// 启动子协程处理业务
 			go dealConn.Open()
 		}

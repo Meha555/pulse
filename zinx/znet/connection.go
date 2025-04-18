@@ -1,6 +1,7 @@
 package znet
 
 import (
+	"errors"
 	"log"
 	"my-zinx/zinx/ziface"
 	"net"
@@ -8,6 +9,8 @@ import (
 	"github.com/google/uuid"
 )
 
+// Connection
+// 将裸的TCP socket包装，将具体的业务与连接绑定
 type Connection struct {
 	// 当前连接的socket TCP套接字
 	conn *net.TCPConn
@@ -15,30 +18,37 @@ type Connection struct {
 	connID uuid.UUID
 	// 当前连接的关闭状态
 	isClosed bool
-	// 回调函数
-	handler ziface.HandleFunc
+
+	// 当前连接的回调函数
+	// handler ziface.HandleFunc
+
+	// 路由对象，用于处理当前连接的业务逻辑
+	router ziface.IRouter
 	// FIXME: 通知该连接已经停止 这个字段是否需要？
 	// 为什么不直接在 Stop() 方法中调用 Conn.Close() 来关闭连接？
 	exitChan chan struct{}
 }
 
-func NewConnection(conn *net.TCPConn, connID uuid.UUID, handler ziface.HandleFunc) *Connection {
+func NewConnection(conn *net.TCPConn, connID uuid.UUID, router ziface.IRouter) *Connection {
 	return &Connection{
 		conn:     conn,
 		connID:   connID,
 		isClosed: false,
-		handler:  handler,
+		router:   router,
 		exitChan: make(chan struct{}, 1), // 这里设置为 1，确保至少有一个缓冲区，防止写入时没人读导致阻塞，或者反之
 	}
 }
 
-func (c *Connection) Open() {
+func (c *Connection) Open() error {
+	if c.router == nil {
+		return errors.New("router is nil")
+	}
 	go c.StartReader()
 
 	for {
 		select {
 		case <-c.exitChan: // 等待 Stop() 方法通知退出
-			return
+			return nil
 		}
 	}
 }
@@ -60,6 +70,28 @@ func (c Connection) ConnID() uuid.UUID {
 	return c.connID
 }
 
+func (c Connection) Conn() net.Conn {
+	return c.conn
+}
+
+func (c Connection) Send(data []byte) (int, error) {
+	if c.isClosed {
+		return 0, errors.New("connection is closed")
+	}
+	return c.conn.Write(data)
+}
+
+func (c Connection) Recv(data []byte) (int, error) {
+	if c.isClosed {
+		return 0, errors.New("connection is closed")
+	}
+	return c.conn.Read(data)
+}
+
+func (c Connection) LocalAddr() net.Addr {
+	return c.conn.LocalAddr()
+}
+
 func (c Connection) RemoteAddr() net.Addr {
 	return c.conn.RemoteAddr()
 }
@@ -75,6 +107,7 @@ func (c *Connection) StartReader() {
 	defer c.Close() // 确保连接能被关闭
 
 	for {
+		// 读取对端请求数据
 		buf := make([]byte, 512)
 		nbytes, err := c.conn.Read(buf)
 		if err != nil {
@@ -82,12 +115,31 @@ func (c *Connection) StartReader() {
 			c.exitChan <- struct{}{} // 通知 Open() 方法退出
 			continue                 // 允许这次没拿到数据，下次再拿
 		}
-		// 调用handler指定的业务处理数据
-		if err := c.handler(c.conn, buf, nbytes); err != nil {
-			log.Println("Handle error:", err)
-			c.exitChan <- struct{}{} // 通知 Open() 方法退出
-			return
+
+		// 封装请求数据
+		req := &Request{
+			conn: c,
+			data: buf[:nbytes],
 		}
+		// 执行指定的业务处理数据
+		go func(request ziface.IRequest) {
+			var err error
+			if err = c.router.PreHandle(request); err != nil {
+				log.Println("PreHandle error:", err)
+				c.exitChan <- struct{}{} // 通知 Open() 方法退出
+				return
+			}
+			if err = c.router.Handle(request); err != nil {
+				log.Println("Handle error:", err)
+				c.exitChan <- struct{}{} // 通知 Open() 方法退出
+				return
+			}
+			if err = c.router.PostHandle(request); err != nil {
+				log.Println("PostHandle error:", err)
+				c.exitChan <- struct{}{}
+				return
+			}
+		}(req)
 	}
 }
 

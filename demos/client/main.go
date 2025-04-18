@@ -1,17 +1,13 @@
-package znet_test
+package main
 
 import (
 	"fmt"
-	"my-zinx/zinx/znet"
 	"net"
-	"testing"
 	"time"
 )
 
-func ClientTest() {
+func main() {
 	fmt.Println("Client Test ... start")
-	//3秒之后发起测试请求，给服务端开启服务的机会
-	time.Sleep(3 * time.Second)
 
 	conn, err := net.Dial("tcp4", "127.0.0.1:3333")
 	if err != nil {
@@ -33,17 +29,8 @@ func ClientTest() {
 			return
 		}
 
-		fmt.Printf(" server call back: %s\n", buf)
+		fmt.Printf("read: %s\n", buf)
 
 		time.Sleep(1 * time.Second)
 	}
-}
-
-func TestServer(t *testing.T) {
-	s := znet.NewServer("[zinx V0.2]", 3333) // 创建一个 server Handler
-
-	go ClientTest() // 启动客户端
-
-	s.Start()
-	s.Serve()
 }
