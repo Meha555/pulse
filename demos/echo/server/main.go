@@ -15,11 +15,11 @@ func (p *EchoController) Handle(request ziface.IRequest) error {
 	fmt.Println("Call Controller Handle")
 	msg := request.Msg()
 	log.Printf("ReadMsg: %d %s\n", msg.Serial(), string(msg.Body()))
-	if nbytes, err := request.Conn().(*znet.Connection).SendMsg(msg); err != nil {
+	if err := request.Conn().(*znet.Connection).SendMsg(msg); err != nil {
 		log.Println("Write error:", err)
 		return err
 	} else {
-		log.Println("Write success, nbytes:", nbytes)
+		log.Println("Write success")
 		return nil
 	}
 }

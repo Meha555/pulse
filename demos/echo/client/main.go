@@ -26,7 +26,13 @@ func main() {
 func doEcho(conn *znet.Connection, id int) {
 	var serial uint32 = 0
 	for {
-		_, err := conn.SendMsg(znet.NewSeqedTLVMsg(serial, 0, fmt.Appendf(nil, "hello ZINX %d", id)))
+		msgSent := znet.NewSeqedTLVMsg(serial, 0, fmt.Appendf(nil, "hello ZINX %d", id))
+		data, err := znet.Marshal(msgSent)
+		if err != nil {
+			fmt.Println("Marshal error:", err)
+			continue
+		}
+		_, err = conn.Send(data)
 		if err != nil {
 			fmt.Println("Write error:", err)
 			return

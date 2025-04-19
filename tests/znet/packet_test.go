@@ -1,6 +1,7 @@
 package znet_test
 
 import (
+	"bytes"
 	"my-zinx/zinx/znet"
 	"testing"
 )
@@ -26,7 +27,7 @@ func TestPacket(t *testing.T) {
 		if p.BodyLen() != 10 {
 			t.Errorf("bodyLen 不正确，期望 10，实际 %d", p.BodyLen())
 		}
-		if string(p.Body()) != string([]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}) {
+		if !bytes.Equal(p.Body(), []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}) {
 			t.Errorf("body 不正确")
 		}
 	})
@@ -56,7 +57,7 @@ func TestTLVMsg(t *testing.T) {
 		if tlv.BodyLen() != 10 {
 			t.Errorf("bodyLen 不正确，期望 10，实际 %d", tlv.BodyLen())
 		}
-		if string(tlv.Body()) != string([]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}) {
+		if !bytes.Equal(tlv.Body(), []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}) {
 			t.Errorf("body 不正确")
 		}
 	})
@@ -86,7 +87,40 @@ func TestSeqedMsg(t *testing.T) {
 		if seq.BodyLen() != 10 {
 			t.Errorf("bodyLen 不正确，期望 10，实际 %d", seq.BodyLen())
 		}
-		if string(seq.Body()) != string([]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}) {
+		if !bytes.Equal(seq.Body(), []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}) {
+			t.Errorf("body 不正确")
+		}
+	})
+}
+
+func TestSeqedTLVMsg(t *testing.T) {
+	t.Run("Marshal", func(t *testing.T) {
+		seqtlv := znet.NewSeqedTLVMsg(1, 123, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
+		data, err := znet.Marshal(seqtlv)
+		if err != nil {
+			t.Fatalf("Marshal SeqedTLVMsg 失败: %v", err)
+		}
+		if len(data) != 20 {
+			t.Errorf("Marshal 结果长度不正确，期望 22，实际 %d", len(data))
+		}
+	})
+	t.Run("Unmarshal", func(t *testing.T) {
+		data := []byte{1, 0, 0, 0, 123, 0, 10, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+		seqtlv := &znet.SeqedTLVMsg{}
+		err := znet.Unmarshal(data, seqtlv, true)
+		if err != nil {
+			t.Fatalf("Unmarshal SeqedTLVMsg 失败: %v", err)
+		}
+		if seqtlv.Serial() != 1 {
+			t.Errorf("serial 不正确，期望 1，实际 %d", seqtlv.Serial())
+		}
+		if seqtlv.Tag() != 123 {
+			t.Errorf("tag 不正确，期望 123，实际 %d", seqtlv.Tag())
+		}
+		if seqtlv.BodyLen() != 10 {
+			t.Errorf("bodyLen 不正确，期望 10，实际 %d", seqtlv.BodyLen())
+		}
+		if !bytes.Equal(seqtlv.Body(), []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}) {
 			t.Errorf("body 不正确")
 		}
 	})
