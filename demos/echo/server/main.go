@@ -7,12 +7,12 @@ import (
 	"my-zinx/zinx/znet"
 )
 
-type EchoController struct {
-	znet.BaseController
+type EchoApi struct {
+	znet.BaseJob
 }
 
-func (p *EchoController) Handle(request ziface.IRequest) error {
-	fmt.Println("Call Controller Handle")
+func (p *EchoApi) Handle(request ziface.IRequest) error {
+	fmt.Println("Call Api Handle")
 	msg := request.Msg()
 	log.Printf("ReadMsg: %d %s\n", msg.Serial(), string(msg.Body()))
 	if err := request.Conn().(*znet.Connection).SendMsg(msg); err != nil {
@@ -26,8 +26,8 @@ func (p *EchoController) Handle(request ziface.IRequest) error {
 
 func main() {
 	s := znet.NewServer()
-	s.ControllerMapper.
-		AddController(0, &EchoController{}).
-		AddController(1, &EchoController{})
+	s.ApiMapper.
+		AddJob(0, &EchoApi{}).
+		AddJob(1, &EchoApi{})
 	s.ListenAndServe()
 }

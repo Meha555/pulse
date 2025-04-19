@@ -24,11 +24,9 @@ type Connection struct {
 	// 当前连接的关闭状态
 	isClosed bool
 
-	// 当前连接的回调函数
-	// handler ziface.HandleFunc
+	// 工作协程池
+	wokerPool *WokerPool
 
-	// 路由对象，用于处理当前连接的业务逻辑
-	mapper ziface.IControllerMapper
 	// 用于读写协程(Reader/Writer)之间的通信（用于实现读写业务分离）
 	msgChan chan []byte
 	// FIXME: 通知该连接已经停止（Reader通知Writer，因为对端关闭连接后Reader会收到EOF REVIEW 底层收到FIN，上报EOF）
@@ -36,22 +34,19 @@ type Connection struct {
 	exitChan chan struct{}
 }
 
-func NewConnection(conn *net.TCPConn, mapper ziface.IControllerMapper) *Connection {
+func NewConnection(conn *net.TCPConn, wokerPool *WokerPool) *Connection {
 	return &Connection{
-		conn:     conn,
-		connID:   uuid.New(),
-		ctx:      context.Background(),
-		isClosed: false,
-		mapper:   mapper,
-		msgChan:  make(chan []byte, 10),  // 这里设置缓冲区大小为10，允许读写协程的处理速率有一定的差异
-		exitChan: make(chan struct{}, 1), // 这里设置为 1，确保至少有一个缓冲区，防止写入时没人读导致阻塞，或者反之
+		conn:      conn,
+		connID:    uuid.New(),
+		ctx:       context.Background(),
+		isClosed:  false,
+		wokerPool: wokerPool,
+		msgChan:   make(chan []byte, 10),  // 这里设置缓冲区大小为10，允许读写协程的处理速率有一定的差异
+		exitChan:  make(chan struct{}, 1), // 这里设置为 1，确保至少有一个缓冲区，防止写入时没人读导致阻塞，或者反之
 	}
 }
 
 func (c *Connection) Open() error {
-	if c.mapper == nil {
-		return errors.New("controller is nil")
-	}
 	// 启动IO协程负责该连接的读写操作
 	go c.Reader()
 	go c.Writer()
@@ -168,8 +163,8 @@ func (c *Connection) Reader() {
 		}
 		// 封装请求数据
 		req := NewRequest(c, msg)
-		// 起协程来执行业务
-		go c.mapper.ExecController(msg.Tag(), req)
+		// 提交给协程池来处理业务
+		c.wokerPool.Post(req)
 	}
 }
 

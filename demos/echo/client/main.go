@@ -23,10 +23,10 @@ func main() {
 	select {}
 }
 
-func doEcho(conn *znet.Connection, id int) {
+func doEcho(conn *znet.Connection, id uint16) {
 	var serial uint32 = 0
 	for {
-		msgSent := znet.NewSeqedTLVMsg(serial, 0, fmt.Appendf(nil, "hello ZINX %d", id))
+		msgSent := znet.NewSeqedTLVMsg(serial, id, fmt.Appendf(nil, "hello ZINX %d", id))
 		data, err := znet.Marshal(msgSent)
 		if err != nil {
 			fmt.Println("Marshal error:", err)

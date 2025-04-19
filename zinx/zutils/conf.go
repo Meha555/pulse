@@ -10,11 +10,12 @@ import (
 )
 
 type zServerConf struct {
-	Name          string `json:"name"`
-	Host          string `json:"host"`
-	Port          uint16 `json:"port"`
-	MaxConn       uint   `json:"max_conn"`
-	MaxPacketSize uint32 `json:"max_packet_size"`
+	Name              string `json:"name"`
+	Host              string `json:"host"`
+	Port              uint16 `json:"port"`
+	MaxConn           uint   `json:"max_conn"`
+	MaxPacketSize     uint32 `json:"max_packet_size"`
+	MaxWorkerPoolSize uint32 `json:"max_worker_pool_size"`
 }
 
 type zConfig struct {
@@ -38,11 +39,12 @@ func init() {
 	// 设置 Conf 的默认值
 	Conf = &zConfig{
 		Server: zServerConf{
-			Host:          "0.0.0.0",
-			Name:          "MY-ZINX Server",
-			Port:          3333,
-			MaxConn:       10,
-			MaxPacketSize: 4096,
+			Host:              "0.0.0.0",
+			Name:              "MY-ZINX Server",
+			Port:              3333,
+			MaxConn:           10,
+			MaxPacketSize:     4096,
+			MaxWorkerPoolSize: 10,
 		},
 	}
 }
