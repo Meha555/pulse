@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"my-zinx/zinx/znet"
+	"my-zinx/zinx/core/connection"
+	"my-zinx/zinx/core/job"
+	"my-zinx/zinx/core/message"
 	"net"
 	"time"
 )
@@ -15,19 +18,38 @@ func main() {
 		fmt.Println("client start err: ", err)
 		return
 	}
-	conn := znet.NewConnection(peer, nil)
+	conn := connection.NewConnection(peer, context.Background(), nil)
 
+	go doHeartBeat(conn)
 	go doEcho(conn, 0)
 	go doEcho(conn, 1)
 
 	select {}
 }
 
-func doEcho(conn *znet.Connection, id uint16) {
+func doHeartBeat(conn *connection.Connection) {
+	ticker := time.NewTicker(time.Second)
+	for curTime := range ticker.C {
+		msgSent := message.NewSeqedTLVMsg(0, job.HeartBeatTag, nil)
+		data, err := message.Marshal(msgSent)
+		if err != nil {
+			fmt.Println("Marshal error:", err)
+			continue
+		}
+		_, err = conn.Send(data)
+		if err != nil {
+			fmt.Println("Write error:", err)
+			return
+		}
+		fmt.Println("heartbeat success: ", curTime)
+	}
+}
+
+func doEcho(conn *connection.Connection, id uint16) {
 	var serial uint32 = 0
 	for {
-		msgSent := znet.NewSeqedTLVMsg(serial, id, fmt.Appendf(nil, "hello ZINX %d", id))
-		data, err := znet.Marshal(msgSent)
+		msgSent := message.NewSeqedTLVMsg(serial, id, fmt.Appendf(nil, "hello ZINX %d", id))
+		data, err := message.Marshal(msgSent)
 		if err != nil {
 			fmt.Println("Marshal error:", err)
 			continue
@@ -39,7 +61,7 @@ func doEcho(conn *znet.Connection, id uint16) {
 		}
 		serial++
 
-		msg := &znet.SeqedTLVMsg{}
+		msg := &message.SeqedTLVMsg{}
 		err = conn.RecvMsg(msg)
 		if err != nil {
 			fmt.Println("read buf error:", err)

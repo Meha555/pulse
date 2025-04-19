@@ -1,0 +1,13 @@
+{
+    "server": {
+        "name": "MY-ZINX Server",
+        "host": "127.0.0.1",
+        "port": 3333,
+        "heartbeat_tick": 3,
+        "conn_timeout": 60,
+        "max_conn_count": 100,
+        "max_msg_queue_size": 50,
+        "max_packet_size": 4096,
+        "max_worker_pool_size": 10
+    }
+}

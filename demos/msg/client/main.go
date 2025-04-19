@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"my-zinx/zinx/znet"
+	"my-zinx/zinx/core/message"
 	"net"
 )
 
@@ -15,15 +15,15 @@ func main() {
 	}
 	defer conn.Close()
 
-	msg1 := znet.NewSeqedMsg(0, []byte{'h', 'e', 'l', 'l', 'o'})
-	sendData1, err := znet.Marshal(msg1)
+	msg1 := message.NewSeqedMsg(0, []byte{'h', 'e', 'l', 'l', 'o'})
+	sendData1, err := message.Marshal(msg1)
 	if err != nil {
 		fmt.Println("client pack msg1 err:", err)
 		return
 	}
 
-	msg2 := znet.NewSeqedMsg(1, []byte{'w', 'o', 'r', 'l', 'd', '!', '!'})
-	sendData2, err := znet.Marshal(msg2)
+	msg2 := message.NewSeqedMsg(1, []byte{'w', 'o', 'r', 'l', 'd', '!', '!'})
+	sendData2, err := message.Marshal(msg2)
 	if err != nil {
 		fmt.Println("client temp msg2 err:", err)
 		return

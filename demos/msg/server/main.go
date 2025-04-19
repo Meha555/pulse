@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
-	"my-zinx/zinx/znet"
+	"my-zinx/zinx/core/message"
 	"net"
 )
 
@@ -25,7 +25,7 @@ func main() {
 		//启动协程处理客户端请求
 		go func(conn net.Conn) {
 			for {
-				msg := &znet.SeqedMsg{}
+				msg := &message.SeqedMsg{}
 				//1 先读出流中的head部分
 				headerData := make([]byte, msg.HeaderLen())
 				_, err := io.ReadFull(conn, headerData) //ReadFull会读取正好len(headerData)个字节
@@ -34,7 +34,7 @@ func main() {
 					break
 				}
 				//将headData字节流 拆包到msg中
-				err = znet.Unmarshal(headerData, msg, false)
+				err = message.Unmarshal(headerData, msg, false)
 				if err != nil {
 					fmt.Println("unmarshal header err:", err)
 					continue
@@ -48,7 +48,7 @@ func main() {
 						fmt.Println("read body error")
 						continue
 					}
-					err = znet.UmarshalBodyOnly(bodyData, int(msg.BodyLen()), msg)
+					err = message.UmarshalBodyOnly(bodyData, int(msg.BodyLen()), msg)
 					if err != nil {
 						fmt.Println("unmarshal body err:", err)
 						continue
