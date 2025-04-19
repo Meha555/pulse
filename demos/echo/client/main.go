@@ -17,25 +17,31 @@ func main() {
 	}
 	conn := znet.NewConnection(peer, nil)
 
+	go doEcho(conn, 0)
+	go doEcho(conn, 1)
+
+	select {}
+}
+
+func doEcho(conn *znet.Connection, id int) {
 	var serial uint32 = 0
 	for {
-
-		_, err := conn.SendMsg(znet.NewSeqedMsg(serial, []byte("hello ZINX")))
+		_, err := conn.SendMsg(znet.NewSeqedTLVMsg(serial, 0, fmt.Appendf(nil, "hello ZINX %d", id)))
 		if err != nil {
-			fmt.Println("Write error err", err)
+			fmt.Println("Write error:", err)
 			return
 		}
 		serial++
 
-		msg := &znet.SeqedMsg{}
+		msg := &znet.SeqedTLVMsg{}
 		err = conn.RecvMsg(msg)
 		if err != nil {
-			fmt.Println("read buf error ")
+			fmt.Println("read buf error:", err)
 			return
 		}
 
 		fmt.Printf("read: %d %s\n", msg.Serial(), string(msg.Body()))
 
-		time.Sleep(1 * time.Second)
+		time.Sleep(time.Duration(1<<id) * time.Second)
 	}
 }

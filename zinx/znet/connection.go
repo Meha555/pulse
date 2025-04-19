@@ -1,6 +1,7 @@
 package znet
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -18,6 +19,8 @@ type Connection struct {
 	conn *net.TCPConn
 	// 当前连接的ID 也可以称作为SessionID，ID全局唯一
 	connID uuid.UUID
+	// 用于控制连接的超时
+	ctx context.Context
 	// 当前连接的关闭状态
 	isClosed bool
 
@@ -25,34 +28,34 @@ type Connection struct {
 	// handler ziface.HandleFunc
 
 	// 路由对象，用于处理当前连接的业务逻辑
-	router ziface.IRouter
+	mapper ziface.IControllerMapper
 	// FIXME: 通知该连接已经停止 这个字段是否需要？
 	// 为什么不直接在 Stop() 方法中调用 Conn.Close() 来关闭连接？
 	exitChan chan struct{}
 }
 
-func NewConnection(conn *net.TCPConn, router ziface.IRouter) *Connection {
+func NewConnection(conn *net.TCPConn, mapper ziface.IControllerMapper) *Connection {
 	return &Connection{
-		conn:     conn,
-		connID:   uuid.New(),
-		isClosed: false,
-		router:   router,
-		exitChan: make(chan struct{}, 1), // 这里设置为 1，确保至少有一个缓冲区，防止写入时没人读导致阻塞，或者反之
+		conn:        conn,
+		connID:      uuid.New(),
+		ctx:         context.Background(),
+		isClosed:    false,
+		mapper: mapper,
+		exitChan:    make(chan struct{}, 1), // 这里设置为 1，确保至少有一个缓冲区，防止写入时没人读导致阻塞，或者反之
 	}
 }
 
 func (c *Connection) Open() error {
-	if c.router == nil {
-		return errors.New("router is nil")
+	if c.mapper == nil {
+		return errors.New("controller is nil")
 	}
 	go c.StartReader()
 
-	for {
-		select {
-		case <-c.exitChan: // 等待 Stop() 方法通知退出
-			return nil
-		}
+	// 等待 Stop() 方法通知退出
+	for range c.exitChan {
+		return nil
 	}
+	return nil
 }
 
 func (c *Connection) Close() {
@@ -90,7 +93,7 @@ func (c Connection) Recv(data []byte) (int, error) {
 	return c.conn.Read(data)
 }
 
-func (c Connection) SendMsg(msg *SeqedMsg) (int, error) {
+func (c Connection) SendMsg(msg ziface.IPacket) (int, error) {
 	if c.isClosed {
 		return 0, errors.New("connection is closed")
 	}
@@ -101,7 +104,8 @@ func (c Connection) SendMsg(msg *SeqedMsg) (int, error) {
 	return c.conn.Write(data)
 }
 
-func (c Connection) RecvMsg(msg *SeqedMsg) error {
+// TODO 这种接口作为传出参数，不用指针能否实现传出修改？
+func (c Connection) RecvMsg(msg ziface.IPacket) error {
 	if c.isClosed {
 		return errors.New("connection is closed")
 	}
@@ -145,36 +149,15 @@ func (c *Connection) StartReader() {
 	defer c.Close() // 确保连接能被关闭
 
 	for {
-		msg := &SeqedMsg{}
+		msg := &SeqedTLVMsg{}
 		if err := c.RecvMsg(msg); err != nil {
 			log.Println("RecvMsg error:", err)
 			c.exitChan <- struct{}{} // 通知 Open() 方法退出
 			return
 		}
 		// 封装请求数据
-		req := &Request{
-			conn: c,
-			msg:  msg,
-		}
-		// 执行指定的业务处理数据
-		go func(request ziface.IRequest) {
-			var err error
-			if err = c.router.PreHandle(request); err != nil {
-				log.Println("PreHandle error:", err)
-				c.exitChan <- struct{}{} // 通知 Open() 方法退出
-				return
-			}
-			if err = c.router.Handle(request); err != nil {
-				log.Println("Handle error:", err)
-				c.exitChan <- struct{}{} // 通知 Open() 方法退出
-				return
-			}
-			if err = c.router.PostHandle(request); err != nil {
-				log.Println("PostHandle error:", err)
-				c.exitChan <- struct{}{}
-				return
-			}
-		}(req)
+		req := NewRequest(c, msg)
+		go c.mapper.ExecController(msg.Tag(), req)
 	}
 }
 

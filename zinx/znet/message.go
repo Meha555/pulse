@@ -1,12 +1,11 @@
 package znet
 
-import "my-zinx/zinx/ziface"
-
 // Packet
 // REVIEW 应该被嵌入到结构体的最后
-// 	+------------+
-//  | Len | Body |
-//  +------------+
+//
+//		+------------+
+//	 | Len | Body |
+//	 +------------+
 type Packet struct {
 	bodyLen uint32
 	body    []byte
@@ -36,9 +35,10 @@ func (p Packet) HeaderLen() uint32 {
 }
 
 // TLVMsg
-// 	+------------------+
-//  | Tag | Len | Body |
-//  +------------------+
+//
+//		+------------------+
+//	 | Tag | Len | Body |
+//	 +------------------+
 type TLVMsg struct {
 	tag uint16
 	Packet
@@ -91,4 +91,27 @@ func (s SeqedMsg) HeaderLen() uint32 {
 	return 4 + 4 // sizeof(uint32) + sizeof(uint32)
 }
 
-var _ ziface.ISequentialMsg = (*SeqedMsg)(nil)
+type SeqedTLVMsg struct {
+	serial uint32
+	TLVMsg
+}
+
+func NewSeqedTLVMsg(serial uint32, tag uint16, data []byte) *SeqedTLVMsg {
+	var msg SeqedTLVMsg
+	msg.SetSerial(serial)
+	msg.SetTag(tag)
+	msg.SetBody(data)
+	return &msg
+}
+
+func (s SeqedTLVMsg) Serial() uint32 {
+	return s.serial
+}
+
+func (s *SeqedTLVMsg) SetSerial(serial uint32) {
+	s.serial = serial
+}
+
+func (s SeqedTLVMsg) HeaderLen() uint32 {
+	return 4 /*sizeof(uint32)*/ + s.TLVMsg.HeaderLen()
+}

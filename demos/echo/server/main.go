@@ -7,18 +7,13 @@ import (
 	"my-zinx/zinx/znet"
 )
 
-type EchoRouter struct {
-	znet.BaseRouter
+type EchoController struct {
+	znet.BaseController
 }
 
-func (p *EchoRouter) PreHandle(request ziface.IRequest) error {
-	fmt.Println("Call Router PreHandle")
-	return nil
-}
-
-func (p *EchoRouter) Handle(request ziface.IRequest) error {
-	fmt.Println("Call Router Handle")
-	msg := request.Msg().(*znet.SeqedMsg)
+func (p *EchoController) Handle(request ziface.IRequest) error {
+	fmt.Println("Call Controller Handle")
+	msg := request.Msg()
 	log.Printf("ReadMsg: %d %s\n", msg.Serial(), string(msg.Body()))
 	if nbytes, err := request.Conn().(*znet.Connection).SendMsg(msg); err != nil {
 		log.Println("Write error:", err)
@@ -29,14 +24,10 @@ func (p *EchoRouter) Handle(request ziface.IRequest) error {
 	}
 }
 
-func (p *EchoRouter) PostHandle(request ziface.IRequest) error {
-	fmt.Println("Call Router PostHandle")
-	return nil
-}
-
 func main() {
 	s := znet.NewServer()
-	s.AddRouter(&EchoRouter{})
-	s.Start()
-	s.Serve()
+	s.ControllerMapper.
+		AddController(0, &EchoController{}).
+		AddController(1, &EchoController{})
+	s.ListenAndServe()
 }

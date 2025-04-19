@@ -9,14 +9,17 @@ type ITLVMsg interface {
 	// 消息的唯一Tag，固定2B
 	Tag() uint16
 	SetTag(tag uint16)
-	// Body部分的长度（单位B）
-	BodyLen() uint32
 }
 
 // 顺序消息
-type ISequentialMsg interface {
+type ISeqedMsg interface {
 	IPacket
 	// 消息序列号（用于维护应用层消息的顺序）。固定4B
 	Serial() uint32
 	SetSerial(serial uint32)
+}
+
+type ISeqedTLVMsg interface {
+	ITLVMsg
+	ISeqedMsg
 }
