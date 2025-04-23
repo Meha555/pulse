@@ -1,0 +1,472 @@
+@startuml
+namespace iface {
+    interface IClient  {
+        + Connect() error
+        + Exit() 
+        + Conn() ISession
+        + SendMsg(msg IPacket) error
+        + RecvMsg(msg IPacket) error
+
+    }
+    interface IJob  {
+        + PreHandle(request IRequest) error
+        + Handle(request IRequest) error
+        + PostHandle(request IRequest) error
+
+    }
+    interface IJobRouter  {
+        + GetJob(tag uint16) IJob
+        + AddJob(tag uint16, job IJob) IJobRouter
+        + ExecJob(tag uint16, request IRequest) error
+
+    }
+    interface IPacket  {
+        + Body() []byte
+        + SetBody(data []byte) 
+        + BodyLen() uint32
+        + HeaderLen() uint32
+
+    }
+    interface IQueue  {
+        + Push(request IRequest) 
+        + Pop() IRequest
+        + Len() int
+        + Cap() int
+        + Close() 
+
+    }
+    interface IRequest  {
+        + Session() ISession
+        + Msg() ISeqedTLVMsg
+
+    }
+    interface ISeqedMsg  {
+        + Serial() uint32
+        + SetSerial(serial uint32) 
+
+    }
+    interface ISeqedTLVMsg  {
+    }
+    interface IServer  {
+        + Listen() 
+        + Serve() 
+        + Shutdown() 
+
+    }
+    interface ISession  {
+        + Open() error
+        + Close() 
+        + SessionID() uuid.UUID
+        + Conn() net.Conn
+        + UpdateHeartBeat() 
+        + HeartBeat() uint
+        + ExitChan() <font color=blue>chan</font> <font color=blue>struct</font>{}
+
+    }
+    interface ISessionMgr  {
+        + Add(conn ISession) 
+        + Del(connID uuid.UUID) 
+        + Get(connID uuid.UUID) ISession
+        + Count() uint
+        + Clear() 
+
+    }
+    interface ITLVMsg  {
+        + Tag() uint16
+        + SetTag(tag uint16) 
+
+    }
+}
+"iface.IPacket" *-- "iface.ISeqedMsg"
+"iface.ISeqedMsg" *-- "iface.ISeqedTLVMsg"
+"iface.ITLVMsg" *-- "iface.ISeqedTLVMsg"
+"iface.IPacket" *-- "iface.ITLVMsg"
+
+
+namespace job {
+    class BaseJob << (S,Aquamarine) >> {
+        + PreHandle(req interface.IRequest) error
+        + Handle(req interface.IRequest) error
+        + PostHandle(req interface.IRequest) error
+
+    }
+    class HeartBeatJob << (S,Aquamarine) >> {
+        + Handle(req interface.IRequest) error
+
+    }
+    class JobRouter << (S,Aquamarine) >> {
+        - apis 
+
+        + GetJob(tag uint16) interface.IJob
+        + AddJob(tag uint16, job interface.IJob) interface.IJobRouter
+        + ExecJob(tag uint16, request interface.IRequest) error
+
+    }
+    class MsgQueue << (S,Aquamarine) >> {
+        + Push(request interface.IRequest) 
+        + Pop() interface.IRequest
+        + Len() int
+        + Cap() int
+        + Close() 
+
+    }
+    class WorkerPool << (S,Aquamarine) >> {
+        - size int
+        - mq interface.IQueue
+        - router interface.IJobRouter
+        - stopCh <font color=blue>chan</font> <font color=blue>struct</font>{}
+        - wg sync.WaitGroup
+
+        - processRequest(request interface.IRequest) error
+
+        + Start() 
+        + Stop() 
+        + Post(request interface.IRequest) 
+
+    }
+    class job.MsgQueue << (T, #FF7700) >>  {
+    }
+    class "<font color=blue>chan</font> interface.IRequest" as fontcolorbluechanfontinterfaceIRequest {
+        'This class was created so that we can correctly have an alias pointing to this name. Since it contains dots that can break namespaces
+    }
+}
+"job.BaseJob" *-- "job.HeartBeatJob"
+
+
+namespace log {
+    interface ILogSinker  {
+        + Sink(msg *LogMsg) 
+
+    }
+    class LogFormater << (S,Aquamarine) >> {
+        - items []formatItem
+
+        - parseFormat(format string) error
+
+        + Format(msg *LogMsg) string
+
+    }
+    class LogMsg << (S,Aquamarine) >> {
+        - callDepth int
+
+        + Level int
+        + Category string
+        + File string
+        + Line int
+        + FuncName string
+        + GoroutineID int64
+        + Timestamp time.Time
+        + Stack []string
+        + Content string
+
+        + WithFile(skip int) *LogMsg
+        + WithLine(skip int) *LogMsg
+        + WithFuncName(skip int) *LogMsg
+        + WithGoroutineID() *LogMsg
+        + WithTimestamp() *LogMsg
+        + WithStack(skip int) *LogMsg
+        + WithCallDepth(skip int) *LogMsg
+
+    }
+    class Logger << (S,Aquamarine) >> {
+        - baseLevel int
+        - category string
+        - sinker ILogSinker
+        - logCh <font color=blue>chan</font> *LogMsg
+
+        - enable(level int) bool
+        - doLog(level int, content string, callDepth int, traceSkip int) 
+
+        + Log(level int, content string) 
+        + Debug(content string) 
+        + Info(content string) 
+        + Warn(content string) 
+        + Error(content string) 
+        + Fatal(content string) 
+        + Panic(content string) 
+        + Logf(level int, format string, v ...<font color=blue>interface</font>{}) 
+        + Debugf(format string, v ...<font color=blue>interface</font>{}) 
+        + Infof(format string, v ...<font color=blue>interface</font>{}) 
+        + Warnf(format string, v ...<font color=blue>interface</font>{}) 
+        + Errorf(format string, v ...<font color=blue>interface</font>{}) 
+        + Fatalf(format string, v ...<font color=blue>interface</font>{}) 
+        + Panicf(format string, v ...<font color=blue>interface</font>{}) 
+        + Level() int
+        + SetLevel(level int) 
+
+    }
+    class categoryFormatItem << (S,Aquamarine) >> {
+        - format(out io.Writer, msg *LogMsg) error
+
+    }
+    class contentFormatItem << (S,Aquamarine) >> {
+        - format(out io.Writer, msg *LogMsg) error
+
+    }
+    class fileCounter << (S,Aquamarine) >> {
+        - fileName string
+        - count int
+        - isErr bool
+
+    }
+    class fileFormatItem << (S,Aquamarine) >> {
+        - format(out io.Writer, msg *LogMsg) error
+
+    }
+    class fileSinker << (S,Aquamarine) >> {
+        - formater *LogFormater
+        - filePath string
+        - fileName string
+        - fileObj *os.File
+        - errFileObj *os.File
+        - rotateCnt uint
+        - errRotateCnt uint
+        - maxLogSize int64
+
+        - initFile() error
+        - splitFile(level int) error
+
+        + Sink(msg *LogMsg) 
+
+    }
+    interface formatItem  {
+        - format(out io.Writer, msg *LogMsg) error
+
+    }
+    class funcNameFormatItem << (S,Aquamarine) >> {
+        - format(out io.Writer, msg *LogMsg) error
+
+    }
+    class goroutineIDFormatItem << (S,Aquamarine) >> {
+        - format(out io.Writer, msg *LogMsg) error
+
+    }
+    class levelFormatItem << (S,Aquamarine) >> {
+        - format(out io.Writer, msg *LogMsg) error
+
+    }
+    class lineFormatItem << (S,Aquamarine) >> {
+        - format(out io.Writer, msg *LogMsg) error
+
+    }
+    class newLineFormatItem << (S,Aquamarine) >> {
+        - format(out io.Writer, msg *LogMsg) error
+
+    }
+    class plainTextFormatItem << (S,Aquamarine) >> {
+        - plainText string
+
+        - format(out io.Writer, msg *LogMsg) error
+
+    }
+    class precentSignFormatItem << (S,Aquamarine) >> {
+        - format(out io.Writer, msg *LogMsg) error
+
+    }
+    class stdSinker << (S,Aquamarine) >> {
+        - formater *LogFormater
+
+        + Sink(msg *LogMsg) 
+
+    }
+    class timestampFormatItem << (S,Aquamarine) >> {
+        - format(out io.Writer, msg *LogMsg) error
+
+    }
+}
+
+"log.formatItem" <|-- "log.categoryFormatItem"
+"log.formatItem" <|-- "log.contentFormatItem"
+"log.formatItem" <|-- "log.fileFormatItem"
+"log.ILogSinker" <|-- "log.fileSinker"
+"log.formatItem" <|-- "log.funcNameFormatItem"
+"log.formatItem" <|-- "log.goroutineIDFormatItem"
+"log.formatItem" <|-- "log.levelFormatItem"
+"log.formatItem" <|-- "log.lineFormatItem"
+"log.formatItem" <|-- "log.newLineFormatItem"
+"log.formatItem" <|-- "log.plainTextFormatItem"
+"log.formatItem" <|-- "log.precentSignFormatItem"
+"log.ILogSinker" <|-- "log.stdSinker"
+"log.formatItem" <|-- "log.timestampFormatItem"
+
+namespace message {
+    class Packet << (S,Aquamarine) >> {
+        - bodyLen uint32
+        - body []byte
+
+        + Body() []byte
+        + SetBody(body []byte) 
+        + BodyLen() uint32
+        + HeaderLen() uint32
+
+    }
+    class Request << (S,Aquamarine) >> {
+        - session interface.ISession
+        - msg interface.ISeqedTLVMsg
+
+        + Session() interface.ISession
+        + Msg() interface.ISeqedTLVMsg
+
+    }
+    class SeqedMsg << (S,Aquamarine) >> {
+        - serial uint32
+
+        + Serial() uint32
+        + SetSerial(serial uint32) 
+        + HeaderLen() uint32
+
+    }
+    class SeqedTLVMsg << (S,Aquamarine) >> {
+        - serial uint32
+
+        + Serial() uint32
+        + SetSerial(serial uint32) 
+        + HeaderLen() uint32
+
+    }
+    class TLVMsg << (S,Aquamarine) >> {
+        - tag uint16
+
+        + Tag() uint16
+        + SetTag(tag uint16) 
+        + HeaderLen() uint32
+
+    }
+}
+"message.Packet" *-- "message.SeqedMsg"
+"message.TLVMsg" *-- "message.SeqedTLVMsg"
+"message.Packet" *-- "message.TLVMsg"
+
+"iface.IPacket" <|-- "message.Packet"
+"iface.ISeqedMsg" <|-- "message.SeqedMsg"
+"iface.ISeqedMsg" <|-- "message.SeqedTLVMsg"
+"iface.ITLVMsg" <|-- "message.TLVMsg"
+
+namespace server {
+    class Server << (S,Aquamarine) >> {
+        - sessionMgr interface.ISessionMgr
+        - jobRouter interface.IJobRouter
+        - workerPool *job.WorkerPool
+
+        + Name string
+        + IPVersion string
+        + Ip string
+        + Port uint16
+
+        + Route(tag uint16, job interface.IJob) *Server
+        + Listen() 
+        + Serve() 
+        + Shutdown() 
+        + ListenAndServe() 
+
+    }
+}
+
+"iface.IServer" <|-- "server.Server"
+
+namespace session {
+    class Session << (S,Aquamarine) >> {
+        - conn *net.TCPConn
+        - sessionID uuid.UUID
+        - isClosed atomic.Bool
+        - heartbeat uint
+        - workerPool *job.WorkerPool
+        - msgCh <font color=blue>chan</font> []byte
+        - exitCh <font color=blue>chan</font> <font color=blue>struct</font>{}
+        - hookStub zHooks
+
+        + Open() error
+        + Close() 
+        + SessionID() uuid.UUID
+        + Conn() net.Conn
+        + UpdateHeartBeat() 
+        + HeartBeat() uint
+        + Send(data []byte) (int, error)
+        + Recv(data []byte) (int, error)
+        + SendMsg(msg interface.IPacket) error
+        + RecvMsg(msg interface.IPacket) error
+        + ExitChan() <font color=blue>chan</font> <font color=blue>struct</font>{}
+        + Reader() 
+        + Writer() 
+
+    }
+    class SessionMgr << (S,Aquamarine) >> {
+        - sessionMap <font color=blue>map</font>[uuid.UUID]interface.ISession
+        - heartBeatTicker *time.Ticker
+        - mtx sync.RWMutex
+        - wg sync.WaitGroup
+
+        + Add(session interface.ISession) 
+        + Del(sessionID uuid.UUID) 
+        + Get(sessionID uuid.UUID) interface.ISession
+        + Count() uint
+        + Clear() 
+
+    }
+    class session.SessionHook << (T, #FF7700) >>  {
+    }
+    class session.zHookOpt << (T, #FF7700) >>  {
+    }
+    class zHooks << (S,Aquamarine) >> {
+        + OnOpen SessionHook
+        + OnClose SessionHook
+        + BeforeSend SessionHook
+        + BeforeRecv SessionHook
+        + AfterSend SessionHook
+        + AfterRecv SessionHook
+
+    }
+    class "<font color=blue>func</font>(interface.ISession) " as fontcolorbluefuncfontinterfaceISession {
+        'This class was created so that we can correctly have an alias pointing to this name. Since it contains dots that can break namespaces
+    }
+}
+
+"iface.ISession" <|-- "session.Session"
+
+namespace utils {
+    class Dict << (S,Aquamarine) >> {
+        - dict sync.Map
+        - size atomic.Int32
+
+        + Load(key K) (V, bool)
+        + Store(key K, value V) 
+        + Delete(key K) 
+        + Size() int32
+        + Range(f <font color=blue>func</font>(K, V) bool) 
+        + Iter() <font color=blue>chan</font> <font color=blue>struct</font>{K, {packageName}V}
+    }
+    class zConfig << (S,Aquamarine) >> {
+        + Server zServerConf
+        + Log zLogConf
+
+        + Reload(path string) error
+        + String() string
+
+    }
+    class zLogConf << (S,Aquamarine) >> {
+        + Level int
+        + Format string
+        + File string
+        + Path string
+        + MaxLogSize int64
+
+    }
+    class zServerConf << (S,Aquamarine) >> {
+        + Name string
+        + Host string
+        + Port uint16
+        + HeartBeatTick uint
+        + ConnTimeout uint
+        + MaxConnCount uint
+        + MaxMsgQueueSize uint
+        + MaxPacketSize uint32
+        + MaxWorkerPoolSize uint
+
+    }
+}
+
+
+"job.fontcolorbluechanfontinterfaceIRequest" #.. "job.MsgQueue"
+"session.<font color=blue>func</font>(*Session) " #.. "session.zHookOpt"
+"session.fontcolorbluefuncfontinterfaceISession" #.. "session.SessionHook"
+@enduml

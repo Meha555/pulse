@@ -1,7 +1,6 @@
 package session
 
 import (
-	"log"
 	"my-zinx/zinx/core/job"
 	"my-zinx/zinx/core/message"
 	iface "my-zinx/zinx/interface"
@@ -12,10 +11,10 @@ import (
 	"github.com/google/uuid"
 )
 
-// ConnMgr
+// SessionMgr
 // 支持在添加连接时自动监听其 exitChan，并在 exitCh 关闭时自动删除连接
-type ConnMgr struct {
-	conns map[uuid.UUID]iface.ISession
+type SessionMgr struct {
+	sessionMap map[uuid.UUID]iface.ISession
 
 	// 用于心跳检查的定时器
 	heartBeatTicker *time.Ticker
@@ -23,9 +22,9 @@ type ConnMgr struct {
 	wg              sync.WaitGroup
 }
 
-func NewConnMgr() *ConnMgr {
-	c := &ConnMgr{
-		conns:           make(map[uuid.UUID]iface.ISession),
+func NewSessionMgr() *SessionMgr {
+	c := &SessionMgr{
+		sessionMap:        make(map[uuid.UUID]iface.ISession),
 		heartBeatTicker: time.NewTicker(time.Duration(utils.Conf.Server.HeartBeatTick) * time.Second),
 	}
 
@@ -34,17 +33,17 @@ func NewConnMgr() *ConnMgr {
 		for range c.heartBeatTicker.C {
 			c.mtx.Lock()
 			// 时刻到，检查心跳情况
-			for _, conn := range c.conns {
-				go func(conn iface.ISession) {
-					if conn.HeartBeat() < 5 {
-						conn.(*Session).heartbeat++
-						conn.(*Session).SendMsg(message.NewSeqedTLVMsg(0, job.HeartBeatTag, nil))
+			for _, session := range c.sessionMap {
+				go func(session iface.ISession) {
+					if session.HeartBeat() < 5 {
+						session.(*Session).heartbeat++
+						session.(*Session).SendMsg(message.NewSeqedTLVMsg(0, job.HeartBeatTag, nil))
 					} else {
 						// 说明已经5 * utils.Conf.Server.HeartBeatTick秒未收到该客户端的心跳包，判定该客户端已经掉线
-						log.Printf("Conn %s is timeout, maybe offline", conn.ConnID())
-						c.Del(conn.ConnID())
+						logger.Warnf("Conn %s is timeout, maybe offline", session.SessionID())
+						c.Del(session.SessionID())
 					}
-				}(conn)
+				}(session)
 			}
 			c.mtx.Unlock()
 		}
@@ -53,50 +52,50 @@ func NewConnMgr() *ConnMgr {
 	return c
 }
 
-func (c *ConnMgr) Add(conn iface.ISession) {
+func (c *SessionMgr) Add(session iface.ISession) {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
-	if _, exists := c.conns[conn.ConnID()]; exists {
+	if _, exists := c.sessionMap[session.SessionID()]; exists {
 		return
 	}
-	c.conns[conn.ConnID()] = conn
+	c.sessionMap[session.SessionID()] = session
 
 	// Start a goroutine to listen on the exitCh
 	c.wg.Add(1)
-	go func(connID uuid.UUID) {
+	go func(sessionID uuid.UUID) {
 		defer c.wg.Done()
-		<-conn.ExitChan()
-		c.Del(connID)
-	}(conn.ConnID())
+		<-session.ExitChan()
+		c.Del(sessionID)
+	}(session.SessionID())
 }
 
-func (c *ConnMgr) Del(connID uuid.UUID) {
-	c.mtx.Lock() // 死锁了
+func (c *SessionMgr) Del(sessionID uuid.UUID) {
+	c.mtx.Lock()
 	defer c.mtx.Unlock()
-	if conn, exists := c.conns[connID]; exists {
-		conn.Close()
-		delete(c.conns, connID)
+	if session, exists := c.sessionMap[sessionID]; exists {
+		session.Close()
+		delete(c.sessionMap, sessionID)
 	}
 }
 
-func (c *ConnMgr) Get(connID uuid.UUID) iface.ISession {
+func (c *SessionMgr) Get(sessionID uuid.UUID) iface.ISession {
 	c.mtx.RLock()
 	defer c.mtx.RUnlock()
-	return c.conns[connID]
+	return c.sessionMap[sessionID]
 }
 
-func (c *ConnMgr) Count() uint {
+func (c *SessionMgr) Count() uint {
 	c.mtx.RLock()
 	defer c.mtx.RUnlock()
-	return uint(len(c.conns))
+	return uint(len(c.sessionMap))
 }
 
-func (c *ConnMgr) Clear() {
+func (c *SessionMgr) Clear() {
 	c.mtx.Lock()
-	for connID := range c.conns {
-		if conn, exists := c.conns[connID]; exists {
-			conn.Close()
-			delete(c.conns, connID)
+	for sessionID := range c.sessionMap {
+		if session, exists := c.sessionMap[sessionID]; exists {
+			session.Close()
+			delete(c.sessionMap, sessionID)
 		}
 	}
 	c.mtx.Unlock()
@@ -104,4 +103,4 @@ func (c *ConnMgr) Clear() {
 	c.wg.Wait()
 }
 
-var _ iface.ISessionMgr = (*ConnMgr)(nil)
+var _ iface.ISessionMgr = (*SessionMgr)(nil)

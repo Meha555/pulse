@@ -102,7 +102,7 @@ func (l *LogMsg) WithTimestamp() *LogMsg {
 }
 
 func (l *LogMsg) WithStack(skip int) *LogMsg {
-	for i := skip; ; i++ { // TODO 跳过log包内的调用栈
+	for i := skip; ; i++ { // 跳过log包内的调用栈
 		if pc, fileName, line, ok := runtime.Caller(i); ok {
 			l.Stack = append(l.Stack, fmt.Sprintf("0x%x %s:%d", pc, fileName, line))
 			if i == skip {

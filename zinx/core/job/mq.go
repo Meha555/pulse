@@ -1,7 +1,8 @@
-package message
+package job
 
 import iface "my-zinx/zinx/interface"
 
+// 由于是channel，因此内部有锁，是并发安全的
 type MsgQueue chan iface.IRequest
 
 func NewMsgQueue(capacity int) *MsgQueue {
@@ -28,5 +29,3 @@ func (t MsgQueue) Cap() int {
 func (t MsgQueue) Close() {
 	close(t)
 }
-
-var _ iface.IQueue = (*MsgQueue)(nil)

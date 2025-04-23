@@ -108,7 +108,7 @@ func TestWorkerPool(t *testing.T) {
 	mockMapper.On("ExecJob", uint16(0), mockRequest).Return(nil)
 
 	// Initialize WorkerPool
-	pool := job.NewWokerPool(2, mockMQ, mockMapper)
+	pool := job.NewWorkerPool(2, mockMQ, mockMapper)
 
 	// Test Start and Stop
 	t.Run("Start and Stop", func(t *testing.T) {

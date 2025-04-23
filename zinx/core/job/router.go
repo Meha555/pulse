@@ -3,6 +3,7 @@ package job
 import (
 	"fmt"
 	iface "my-zinx/zinx/interface"
+	"my-zinx/zinx/utils"
 )
 
 // Api Tags
@@ -14,34 +15,38 @@ const (
 
 type JobRouter struct {
 	// <tag, job>映射表
-	apis map[uint16]iface.IJob
+	apis utils.Dict[uint16, iface.IJob]
 }
 
 func NewJobRouter() *JobRouter {
 	return &JobRouter{
-		apis: make(map[uint16]iface.IJob),
 	}
 }
 
 func (r *JobRouter) GetJob(tag uint16) iface.IJob {
-	return r.apis[tag]
+	job, ok := r.apis.Load(tag)
+	if !ok {
+		logger.Errorf("get job failed")
+		return nil
+	}
+	return job
 }
 
 func (r *JobRouter) AddJob(tag uint16, job iface.IJob) iface.IJobRouter {
-	r.apis[tag] = job
+	r.apis.Store(tag, job)
 	return r
 }
 
 func (r *JobRouter) ExecJob(tag uint16, request iface.IRequest) error {
-	if job, ok := r.apis[tag]; ok {
+	if job, ok := r.apis.Load(tag); ok {
 		if err := job.PreHandle(request); err != nil {
-			return fmt.Errorf("PreHandle error: %v", err)
+			return fmt.Errorf("call PreHandle error: %v", err)
 		}
 		if err := job.Handle(request); err != nil {
-			return fmt.Errorf("Handle error: %v", err)
+			return fmt.Errorf("call Handle error: %v", err)
 		}
 		if err := job.PostHandle(request); err != nil {
-			return fmt.Errorf("PostHandle error: %v", err)
+			return fmt.Errorf("call PostHandle error: %v", err)
 		}
 		return nil
 	}

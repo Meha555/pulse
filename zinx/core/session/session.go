@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"my-zinx/zinx/core/job"
 	"my-zinx/zinx/core/message"
 	iface "my-zinx/zinx/interface"
@@ -13,8 +12,12 @@ import (
 	"net"
 	"sync/atomic"
 
+	"my-zinx/zinx/log"
+
 	"github.com/google/uuid"
 )
+
+var logger = log.NewStdLogger(log.LevelDebug, "session", "[%t] [%c %l] [%f:%C:%L:%g] %m", false)
 
 type zHooks struct {
 	OnOpen     SessionHook
@@ -73,34 +76,32 @@ type Session struct {
 	// 当前连接的socket TCP套接字
 	conn *net.TCPConn
 	// 当前连接的ID 也可以称作为SessionID，ID全局唯一
-	connID uuid.UUID
+	sessionID uuid.UUID
 	// 当前连接的关闭状态
 	isClosed atomic.Bool
 	// 保活心跳次数
 	heartbeat uint
 
 	// 工作协程池
-	wokerPool *job.WokerPool
+	workerPool *job.WorkerPool
 
 	// 用于读写协程(Reader/Writer)之间的通信（用于实现读写业务分离）
 	msgCh chan []byte
-	// FIXME: 通知该连接已经停止（Reader通知Writer，因为对端关闭连接后Reader会收到EOF REVIEW 底层收到FIN，上报EOF）
-	// 为什么不直接在 Stop() 方法中调用 Conn.Close() 来关闭连接？
+	// 通知该连接已经停止
 	exitCh chan struct{}
 
-	hookStub  zHooks
-	valuedCtx utils.Context
+	hookStub zHooks
 }
 
-func NewConnection(conn *net.TCPConn, parent context.Context, wokerPool *job.WokerPool, opts ...zHookOpt) *Session {
+func NewSession(conn *net.TCPConn, parent context.Context, workerPool *job.WorkerPool, opts ...zHookOpt) *Session {
 	c := &Session{
-		conn:      conn,
-		connID:    uuid.New(),
-		isClosed:  atomic.Bool{},
-		heartbeat: 0,
-		wokerPool: wokerPool,
-		msgCh:     make(chan []byte, utils.Conf.Server.MaxMsgQueueSize), // 这里设置缓冲区大小为10，允许读写协程的处理速率有一定的差异
-		exitCh:    make(chan struct{}, 1),                               // 这里设置为 1，确保至少有一个缓冲区，防止写入时没人读导致阻塞，或者反之
+		conn:       conn,
+		sessionID:  uuid.New(),
+		isClosed:   atomic.Bool{},
+		heartbeat:  0,
+		workerPool: workerPool,
+		msgCh:      make(chan []byte, utils.Conf.Server.MaxMsgQueueSize), // 这里设置缓冲区大小为10，允许读写协程的处理速率有一定的差异
+		exitCh:     make(chan struct{}, 1),                               // 这里设置为 1，确保至少有一个缓冲区，防止写入时没人读导致阻塞，或者反之
 		hookStub: zHooks{
 			OnOpen:     noOp,
 			OnClose:    noOp,
@@ -109,7 +110,6 @@ func NewConnection(conn *net.TCPConn, parent context.Context, wokerPool *job.Wok
 			AfterSend:  noOp,
 			AfterRecv:  noOp,
 		},
-		valuedCtx: utils.NewContext(parent),
 	}
 
 	for _, opt := range opts {
@@ -144,12 +144,11 @@ func (c *Session) Close() {
 	c.conn.Close()
 	c.exitCh <- struct{}{} // 通知 Open() 方法退出
 	close(c.msgCh)
-	// TODO close管道，读端会收到一个零值，写端会收到一个错误？
 	close(c.exitCh)
 }
 
-func (c *Session) ConnID() uuid.UUID {
-	return c.connID
+func (c *Session) SessionID() uuid.UUID {
+	return c.sessionID
 }
 
 func (c *Session) Conn() net.Conn {
@@ -190,12 +189,12 @@ func (c *Session) SendMsg(msg iface.IPacket) error {
 	}
 	// return c.conn.Write(data)
 	// 提交给让Writer协程异步发送，这样不会因为底层TCP发送缓冲区满而导致这里阻塞
-	// TODO 如果发送有错误，则由Writer协程处理
+	// 如果发送有错误，则由Writer协程处理，这里直接返回
 	c.msgCh <- data
 	return nil
 }
 
-// TODO 这种接口作为传出参数，不用指针能否实现传出修改？
+// NOTE 这种接口作为传出参数，不用指针可以实现传出修改
 func (c *Session) RecvMsg(msg iface.IPacket) error {
 	if c.isClosed.Load() {
 		return errors.New("connection is closed")
@@ -209,7 +208,6 @@ func (c *Session) RecvMsg(msg iface.IPacket) error {
 	if err := message.Unmarshal(headerData, msg, false); err != nil {
 		return fmt.Errorf("unmarshal header err: %v", err)
 	}
-	// log.Printf("msg bodylen=%d", msg.BodyLen())
 	// 读取负载
 	if msg.BodyLen() <= 0 {
 		return nil
@@ -224,7 +222,7 @@ func (c *Session) RecvMsg(msg iface.IPacket) error {
 	return nil
 }
 
-func (c *Session) ExitChan() chan struct{} {
+func (c *Session) ExitChan() <-chan struct{} {
 	return c.exitCh
 }
 
@@ -234,34 +232,34 @@ var _ iface.ISession = (*Session)(nil)
 // Reader 是用于读取客户端数据的 Goroutine
 // 会需要与主协程通过chan通信
 func (c *Session) Reader() {
-	log.Println("Reader Goroutine is running")
-	defer log.Println(c.Conn().RemoteAddr().String(), " Reader Goroutine exit!")
+	logger.Debug("Reader Goroutine is running")
+	defer logger.Debugf(c.Conn().RemoteAddr().String(), " Reader Goroutine exit!")
 	defer c.Close() // 确保连接能被关闭
 
 	for {
 		msg := &message.SeqedTLVMsg{}
 		if err := c.RecvMsg(msg); err != nil {
-			log.Println("RecvMsg error:", err)
+			logger.Errorf("RecvMsg error: %v", err)
 			c.Close()
 			return
 		}
 		// 封装请求数据
 		req := message.NewRequest(c, msg)
 		// 提交给协程池来处理业务
-		c.wokerPool.Post(req)
+		c.workerPool.Post(req)
 	}
 }
 
 // Writer 是用于向客户端发送数据的 Goroutine
 // 会需要与主协程通过chan通信
 func (c *Session) Writer() {
-	log.Println("Writer Goroutine is running")
-	defer log.Println(c.Conn().RemoteAddr().String(), " Writer Goroutine exit!")
+	logger.Debug("Writer Goroutine is running")
+	defer logger.Debugf(c.Conn().RemoteAddr().String(), " Writer Goroutine exit!")
 	for {
 		select {
-		case data := <-c.msgCh: // 从msgChan 中读取数据
+		case data := <-c.msgCh: // 从msgCh中读取数据
 			if _, err := c.Send(data); err != nil {
-				log.Println("Send error:", err)
+				logger.Errorf("Send error: %v", err)
 				continue
 			}
 		case <-c.exitCh: // 响应退出信号

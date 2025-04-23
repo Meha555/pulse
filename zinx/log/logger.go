@@ -23,6 +23,13 @@ var LevelStrs = map[int]string{
 	LevelPanic: "PANIC",
 }
 
+// 预先定义一个全局默认的Logger实例，方便使用
+var Log *Logger
+
+func init() {
+	Log = NewStdLogger(LevelInfo, "DEFAULT", "[%t] [%c %l] [%f:%C:%L:%g] %m", false)
+}
+
 // NOTE 如果LoggerBase是小写的，则子包也无法看到这个符号
 
 type Logger struct {

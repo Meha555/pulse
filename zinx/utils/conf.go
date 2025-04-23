@@ -4,7 +4,7 @@ package utils
 
 import (
 	"encoding/json"
-	"log"
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -21,13 +21,12 @@ type zServerConf struct {
 	MaxWorkerPoolSize uint   `json:"max_worker_pool_size"`
 }
 
-// TODO 分级，stdlog和filelog的配置要分离
 type zLogConf struct {
 	Level      int    `json:"level"`
 	Format     string `json:"format"`
 	File       string `json:"file,omitempty"`
 	Path       string `json:"path,omitempty"`
-	MaxLogSize int64 `json:"max_log_size,omitempty"`
+	MaxLogSize int64  `json:"max_log_size,omitempty"`
 }
 
 type zConfig struct {
@@ -68,8 +67,8 @@ func init() {
 			MaxWorkerPoolSize: 10,
 		},
 		Log: zLogConf{
-			Level:      2,
-			Format:     "[%t] [%c %l] [%f:%L:%g] %m",
+			Level:  2,
+			Format: "[%t] [%c %l] [%f:%L:%g] %m",
 		},
 	}
 }
@@ -83,7 +82,6 @@ func Init() {
 	// 使用 path/filepath 库的 Join 函数来拼接路径，避免路径分隔符数量不对的问题
 	confPath := filepath.Join(path, confFile)
 	if err := Conf.Reload(confPath); err != nil {
-		log.Printf("Loading config from %s failed", confPath)
+		panic(fmt.Errorf("loading config from %s failed: %w", confPath, err))
 	}
-	log.Println(*Conf)
 }

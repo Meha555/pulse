@@ -1,0 +1,22 @@
+@startuml
+package "Zinx TCP服务器框架" {
+    component "服务端套接字" as serverSocket
+    component "TCP客户端连接" as clientConnection
+    component "Reader协程" as readerCoroutine
+    component "Writer协程" as writerCoroutine
+    component "心跳协程" as heartbeatCoroutine
+    component "协程池" as coroutinePool {
+        component "工作协程" as workerCoroutine
+    }
+}
+
+serverSocket --> clientConnection : 监听连接
+clientConnection --> readerCoroutine : 连接建立
+readerCoroutine --> clientConnection : 阻塞读取数据
+readerCoroutine --> coroutinePool : 提交解包封装的任务
+workerCoroutine --> workerCoroutine : 消费任务执行回调
+workerCoroutine --> writerCoroutine : 通过chan传递结果数据
+writerCoroutine --> clientConnection : 写回数据
+clientConnection --> heartbeatCoroutine : 心跳检测
+heartbeatCoroutine --> clientConnection : 维持心跳
+@enduml

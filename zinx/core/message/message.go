@@ -1,7 +1,7 @@
 package message
 
 // Packet
-// REVIEW 应该被嵌入到结构体的最后
+// NOTE 应该被嵌入到结构体的最后
 //
 //		+------------+
 //	 | Len | Body |
@@ -115,3 +115,5 @@ func (s *SeqedTLVMsg) SetSerial(serial uint32) {
 func (s SeqedTLVMsg) HeaderLen() uint32 {
 	return 4 /*sizeof(uint32)*/ + s.TLVMsg.HeaderLen()
 }
+
+// TODO 利用io.Reader和io.Writer接口、Proxy设计模式封装读写msg的操作

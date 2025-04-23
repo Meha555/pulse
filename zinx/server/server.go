@@ -3,11 +3,10 @@ package server
 import (
 	"context"
 	"fmt"
-	"log"
 	"my-zinx/zinx/core/job"
-	"my-zinx/zinx/core/message"
 	"my-zinx/zinx/core/session"
 	iface "my-zinx/zinx/interface"
+	"my-zinx/zinx/log"
 	"my-zinx/zinx/utils"
 	"net"
 	"os"
@@ -15,36 +14,43 @@ import (
 	"syscall"
 )
 
+var logger = log.NewStdLogger(log.LevelDebug, "server", "[%t] [%c %l] [%f:%C:%L:%g] %m", false)
+
 type Server struct {
 	Name      string
 	IPVersion string
 	Ip        string
 	Port      uint16
 	// 连接管理器
-	connMgr iface.ISessionMgr
+	sessionMgr iface.ISessionMgr
 	// 映射请求到具体的API回调
-	JobRouter iface.IJobRouter
+	jobRouter iface.IJobRouter
 	// 工作协程池
-	wokerPool *job.WokerPool
+	workerPool *job.WorkerPool
 }
 
 func NewServer() *Server {
 	// 消息队列（worker协程从中取数据）mq容量和worker数量相同。mq容量更大没意义
-	mq := message.NewMsgQueue(int(utils.Conf.Server.MaxWorkerPoolSize))
+	mq := job.NewMsgQueue(int(utils.Conf.Server.MaxWorkerPoolSize))
 	router := job.NewJobRouter()
 	return &Server{
-		Name:      utils.Conf.Server.Name,
-		IPVersion: "tcp4",
-		Ip:        utils.Conf.Server.Host,
-		Port:      utils.Conf.Server.Port,
-		connMgr:   session.NewConnMgr(),
-		JobRouter: router,
-		wokerPool: job.NewWokerPool(mq.Cap(), mq, router),
+		Name:       utils.Conf.Server.Name,
+		IPVersion:  "tcp4",
+		Ip:         utils.Conf.Server.Host,
+		Port:       utils.Conf.Server.Port,
+		sessionMgr: session.NewSessionMgr(),
+		jobRouter:  router,
+		workerPool: job.NewWorkerPool(mq.Cap(), mq, router),
 	}
 }
 
+func (s *Server) Route(tag uint16, job iface.IJob) *Server {
+	s.jobRouter.AddJob(tag, job)
+	return s
+}
+
 func (s *Server) Listen() {
-	log.Printf("Server Start with config: %s\n", utils.Conf)
+	logger.Infof("Server Start with config: %s\n", utils.Conf)
 
 	// 忽略信号
 	// 在某些系统中，syscall.SIGCHLD 可能未定义，这里仅忽略 SIGPIPE 信号
@@ -52,20 +58,20 @@ func (s *Server) Listen() {
 
 	endpoint, err := net.ResolveTCPAddr(s.IPVersion, fmt.Sprintf("%s:%d", s.Ip, s.Port))
 	if err != nil {
-		log.Println("ResolveTCPAddr error:", err)
+		logger.Errorf("ResolveTCPAddr error: %v", err)
 		return
 	}
 	listener, err := net.ListenTCP(s.IPVersion, endpoint) // FIXME listener没有Close啊
 	if err != nil {
-		log.Println("ListenTCP error:", err)
+		logger.Errorf("ListenTCP error: %v", err)
 		return
 	}
-	log.Println(s.Name, " Listening...")
+	logger.Infof("%s Listening on %s:%d ...", s.Name, s.Ip, s.Port)
 
 	// 注册心跳路由
-	s.JobRouter.AddJob(job.HeartBeatTag, &job.HeartBeatJob{})
+	s.jobRouter.AddJob(job.HeartBeatTag, &job.HeartBeatJob{})
 	// 启动协程池
-	s.wokerPool.Start()
+	s.workerPool.Start()
 
 	// 启用单独的协程来处理客户端连接
 	// 这是go语言的风格，能用异步一般用异步。这样主协程接下来还可以做其他工作，比如后面的Serve()方法
@@ -73,43 +79,41 @@ func (s *Server) Listen() {
 		for {
 			peer, err := listener.AcceptTCP()
 			if err != nil {
-				log.Println("AcceptTCP error:", err)
+				logger.Errorf("AcceptTCP error: %v", err)
 				continue
 			}
-			if s.connMgr.Count() > utils.Conf.Server.MaxConnCount {
-				log.Println("Too many connections, close this new connection")
+			if s.sessionMgr.Count() > utils.Conf.Server.MaxConnCount {
+				logger.Warn("Too many connections, close this new connection")
 				peer.Close()
 				continue
 			}
-			log.Printf("New connection from %s", peer.RemoteAddr())
+			logger.Debugf("New connection from %s", peer.RemoteAddr())
 
-			dealConn := session.NewConnection(peer, context.Background(), s.wokerPool)
-			s.connMgr.Add(dealConn)
+			clientSession := session.NewSession(peer, context.Background(), s.workerPool)
+			s.sessionMgr.Add(clientSession)
 			// 启动子协程处理业务
-			go dealConn.Open()
+			go clientSession.Open()
 		}
 	}()
 }
 
 func (s *Server) Serve() {
-	log.Println("Server Serve")
-
-	// TODO 是否在启动服务的时候, 还需要做其它事情呢? 比如自定义 Logger 或加入鉴权中间件等
+	logger.Debug("Server Serve")
 
 	// 等待中断信号以优雅地关闭服务器（设置 5 秒的超时时间）
-	quitCh := make(chan os.Signal, 1)                      // REVIEW 这里为啥必须是1的buffered chan
-	signal.Notify(quitCh, syscall.SIGINT, syscall.SIGTERM) // 订阅SIGINT和SIGTERM
-	<-quitCh                                               // 从管道中读
+	quitCh := make(chan os.Signal, 1) // REVIEW 这里为啥必须是1的buffered chan
+	signal.Notify(quitCh, syscall.SIGINT, syscall.SIGTERM)
+	<-quitCh
 	s.Shutdown()
 }
 
 func (s *Server) Shutdown() {
-	log.Println("Server Shutdown")
+	logger.Debug("Server Shutdown")
 
-	// TODO 将其它需要清理的连接信息或其他信息一并停止或清理
+	// 将其它需要清理的连接信息或其他信息一并停止或清理
 
-	s.connMgr.Clear()
-	s.wokerPool.Stop()
+	s.sessionMgr.Clear()
+	s.workerPool.Stop()
 }
 
 func (s *Server) ListenAndServe() {

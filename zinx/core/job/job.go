@@ -2,7 +2,10 @@ package job
 
 import (
 	iface "my-zinx/zinx/interface"
+	"my-zinx/zinx/log"
 )
+
+var logger = log.NewStdLogger(log.LevelDebug, "job", "[%t] [%c %l] [%f:%C:%L:%g] %m", false)
 
 // 实现 job 时, 先嵌入这个基类, 然后根据需要对这个基类的方法进行重写
 type BaseJob struct{}
@@ -19,7 +22,7 @@ type HeartBeatJob struct {
 }
 
 func (h *HeartBeatJob) Handle(req iface.IRequest) error {
-	// 心跳包（客户端主动发送，只有包头没有包体，服务端不回复）
+	// 心跳包（客户端主动发送，只有包头没有包体）
 	req.Session().UpdateHeartBeat()
 	return nil
 }

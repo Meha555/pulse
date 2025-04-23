@@ -7,7 +7,7 @@ import (
 	iface "my-zinx/zinx/interface"
 )
 
-// FIXME 暂时采用主机字节序
+// NOTE 这里是应用层协议，所以使用主机字节序即可
 
 // 序列化消息为字节流
 func Marshal(msg interface{}) ([]byte, error) {
@@ -26,7 +26,7 @@ func Marshal(msg interface{}) ([]byte, error) {
 }
 
 // 反序列化字节流为消息
-// FIXME 这里必须要求msg为指针类型
+// NOTE 这里必须要求msg为指针类型，否则下面的类型断言过不去
 func Unmarshal(data []byte, msg interface{}, readBody bool) error {
 	switch m := msg.(type) {
 	case *Packet:
@@ -43,6 +43,7 @@ func Unmarshal(data []byte, msg interface{}, readBody bool) error {
 }
 
 // 以下是类型特化的具体实现
+
 func marshalPacket(p *Packet) ([]byte, error) {
 	buffer := bytes.NewBuffer([]byte{})
 	// 写bodyLen
