@@ -6,7 +6,7 @@ package iface
 // 作为Api的数据源，封装来自客户端的请求消息，此后需要什么数据都可以从该对象中获取
 type IRequest interface {
 	// 获取连接
-	Conn() IConnection
+	Session() ISession
 	// 获取请求数据
 	Msg() ISeqedTLVMsg
 }

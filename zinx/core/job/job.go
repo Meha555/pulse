@@ -20,6 +20,6 @@ type HeartBeatJob struct {
 
 func (h *HeartBeatJob) Handle(req iface.IRequest) error {
 	// 心跳包（客户端主动发送，只有包头没有包体，服务端不回复）
-	req.Conn().UpdateHeartBeat()
+	req.Session().UpdateHeartBeat()
 	return nil
 }

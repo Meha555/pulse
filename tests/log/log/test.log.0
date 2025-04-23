@@ -1,0 +1,32 @@
+[2025-04-26 01:18:35] [FILE_LOG_TEST DEBUG] [unknown:unknown:-1:24] This is a debug message for file log
+[2025-04-26 01:18:35] [FILE_LOG_TEST INFO] [unknown:unknown:-1:24] This is an info message for file log
+[2025-04-26 01:18:35] [FILE_LOG_TEST WARN] [unknown:unknown:-1:24] This is a warning message for file log
+[2025-04-26 01:18:35] [FILE_LOG_TEST DEBUG] [unknown:unknown:-1:24] This is a debug message of DEBUG for file log
+[2025-04-26 01:18:35] [FILE_LOG_TEST INFO] [unknown:unknown:-1:24] This is an info message of INFO for file log
+[2025-04-26 01:18:35] [FILE_LOG_TEST WARN] [unknown:unknown:-1:24] This is a warning message of WARN for file log
+[2025-04-26 01:18:35] [FILE_LOG_TEST INFO] [unknown:unknown:-1:24] This is an info message for file log
+[2025-04-26 01:18:35] [FILE_LOG_TEST WARN] [unknown:unknown:-1:24] This is a warning message for file log
+[2025-04-26 01:22:04] [FILE_LOG_TEST DEBUG] [unknown:unknown:-1:12] This is a debug message for file log
+[2025-04-26 01:22:04] [FILE_LOG_TEST INFO] [unknown:unknown:-1:12] This is an info message for file log
+[2025-04-26 01:22:04] [FILE_LOG_TEST WARN] [unknown:unknown:-1:12] This is a warning message for file log
+[2025-04-26 01:22:04] [FILE_LOG_TEST DEBUG] [unknown:unknown:-1:12] This is a debug message of DEBUG for file log
+[2025-04-26 01:22:04] [FILE_LOG_TEST INFO] [unknown:unknown:-1:12] This is an info message of INFO for file log
+[2025-04-26 01:22:04] [FILE_LOG_TEST WARN] [unknown:unknown:-1:12] This is a warning message of WARN for file log
+[2025-04-26 01:22:04] [FILE_LOG_TEST INFO] [unknown:unknown:-1:12] This is an info message for file log
+[2025-04-26 01:22:04] [FILE_LOG_TEST WARN] [unknown:unknown:-1:12] This is a warning message for file log
+[2025-04-26 01:23:24] [FILE_LOG_TEST DEBUG] [command-line-arguments_test.TestFileLog.func1:log_test.go:51:7] This is a debug message for file log
+[2025-04-26 01:23:24] [FILE_LOG_TEST INFO] [command-line-arguments_test.TestFileLog.func1:log_test.go:52:7] This is an info message for file log
+[2025-04-26 01:23:24] [FILE_LOG_TEST WARN] [command-line-arguments_test.TestFileLog.func1:log_test.go:53:7] This is a warning message for file log
+[2025-04-26 01:23:24] [FILE_LOG_TEST DEBUG] [command-line-arguments_test.TestFileLog.func1:log_test.go:56:7] This is a debug message of DEBUG for file log
+[2025-04-26 01:23:24] [FILE_LOG_TEST INFO] [command-line-arguments_test.TestFileLog.func1:log_test.go:57:7] This is an info message of INFO for file log
+[2025-04-26 01:23:24] [FILE_LOG_TEST WARN] [command-line-arguments_test.TestFileLog.func1:log_test.go:58:7] This is a warning message of WARN for file log
+[2025-04-26 01:23:24] [FILE_LOG_TEST INFO] [command-line-arguments_test.TestFileLog.func2:log_test.go:64:7] This is an info message for file log
+[2025-04-26 01:23:24] [FILE_LOG_TEST WARN] [command-line-arguments_test.TestFileLog.func2:log_test.go:65:7] This is a warning message for file log
+[2025-04-26 01:23:43] [FILE_LOG_TEST DEBUG] [command-line-arguments_test.TestFileLog.func1:log_test.go:51:7] This is a debug message for file log
+[2025-04-26 01:23:43] [FILE_LOG_TEST INFO] [command-line-arguments_test.TestFileLog.func1:log_test.go:52:7] This is an info message for file log
+[2025-04-26 01:23:43] [FILE_LOG_TEST WARN] [command-line-arguments_test.TestFileLog.func1:log_test.go:53:7] This is a warning message for file log
+[2025-04-26 01:23:43] [FILE_LOG_TEST DEBUG] [command-line-arguments_test.TestFileLog.func1:log_test.go:56:7] This is a debug message of DEBUG for file log
+[2025-04-26 01:23:43] [FILE_LOG_TEST INFO] [command-line-arguments_test.TestFileLog.func1:log_test.go:57:7] This is an info message of INFO for file log
+[2025-04-26 01:23:43] [FILE_LOG_TEST WARN] [command-line-arguments_test.TestFileLog.func1:log_test.go:58:7] This is a warning message of WARN for file log
+[2025-04-26 01:23:43] [FILE_LOG_TEST INFO] [command-line-arguments_test.TestFileLog.func2:log_test.go:64:7] This is an info message for file log
+[2025-04-26 01:23:43] [FILE_LOG_TEST WARN] [command-line-arguments_test.TestFileLog.func2:log_test.go:65:7] This is a warning message for file log

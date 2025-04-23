@@ -6,9 +6,9 @@ import (
 	"github.com/google/uuid"
 )
 
-// IConnection
+// ISession
 // 与具体业务回调绑定的TCP连接
-type IConnection interface {
+type ISession interface {
 	// 让当前连接开始工作
 	Open() error
 	// 停止连接的工作，关闭连接

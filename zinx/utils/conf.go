@@ -21,8 +21,18 @@ type zServerConf struct {
 	MaxWorkerPoolSize uint   `json:"max_worker_pool_size"`
 }
 
+// TODO 分级，stdlog和filelog的配置要分离
+type zLogConf struct {
+	Level      int    `json:"level"`
+	Format     string `json:"format"`
+	File       string `json:"file,omitempty"`
+	Path       string `json:"path,omitempty"`
+	MaxLogSize int64 `json:"max_log_size,omitempty"`
+}
+
 type zConfig struct {
 	Server zServerConf `json:"server"`
+	Log    zLogConf    `json:"log"`
 }
 
 func (c *zConfig) Reload(path string) error {
@@ -31,6 +41,11 @@ func (c *zConfig) Reload(path string) error {
 		return err
 	}
 	return json.Unmarshal(data, c)
+}
+
+func (c *zConfig) String() string {
+	data, _ := json.Marshal(c)
+	return string(data)
 }
 
 const confFile = "zinx.json"
@@ -51,6 +66,10 @@ func init() {
 			MaxMsgQueueSize:   50,
 			MaxPacketSize:     4096,
 			MaxWorkerPoolSize: 10,
+		},
+		Log: zLogConf{
+			Level:      2,
+			Format:     "[%t] [%c %l] [%f:%L:%g] %m",
 		},
 	}
 }

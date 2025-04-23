@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"my-zinx/zinx/core/connection"
 	"my-zinx/zinx/core/job"
 	"my-zinx/zinx/core/message"
+	"my-zinx/zinx/core/session"
 	iface "my-zinx/zinx/interface"
 	"my-zinx/zinx/utils"
 	"net"
@@ -21,7 +21,7 @@ type Server struct {
 	Ip        string
 	Port      uint16
 	// 连接管理器
-	connMgr iface.IConnMgr
+	connMgr iface.ISessionMgr
 	// 映射请求到具体的API回调
 	JobRouter iface.IJobRouter
 	// 工作协程池
@@ -37,17 +37,18 @@ func NewServer() *Server {
 		IPVersion: "tcp4",
 		Ip:        utils.Conf.Server.Host,
 		Port:      utils.Conf.Server.Port,
-		connMgr:   connection.NewConnMgr(),
+		connMgr:   session.NewConnMgr(),
 		JobRouter: router,
 		wokerPool: job.NewWokerPool(mq.Cap(), mq, router),
 	}
 }
 
 func (s *Server) Listen() {
-	log.Printf("Server Start with config: %+v\n", utils.Conf)
+	log.Printf("Server Start with config: %s\n", utils.Conf)
 
 	// 忽略信号
-	signal.Ignore(syscall.SIGPIPE, syscall.SIGCHLD)
+	// 在某些系统中，syscall.SIGCHLD 可能未定义，这里仅忽略 SIGPIPE 信号
+	signal.Ignore(syscall.SIGPIPE)
 
 	endpoint, err := net.ResolveTCPAddr(s.IPVersion, fmt.Sprintf("%s:%d", s.Ip, s.Port))
 	if err != nil {
@@ -82,7 +83,7 @@ func (s *Server) Listen() {
 			}
 			log.Printf("New connection from %s", peer.RemoteAddr())
 
-			dealConn := connection.NewConnection(peer, context.Background(), s.wokerPool)
+			dealConn := session.NewConnection(peer, context.Background(), s.wokerPool)
 			s.connMgr.Add(dealConn)
 			// 启动子协程处理业务
 			go dealConn.Open()

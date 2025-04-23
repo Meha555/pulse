@@ -1,4 +1,4 @@
-package connection
+package session
 
 import (
 	"log"
@@ -15,7 +15,7 @@ import (
 // ConnMgr
 // 支持在添加连接时自动监听其 exitChan，并在 exitCh 关闭时自动删除连接
 type ConnMgr struct {
-	conns map[uuid.UUID]iface.IConnection
+	conns map[uuid.UUID]iface.ISession
 
 	// 用于心跳检查的定时器
 	heartBeatTicker *time.Ticker
@@ -25,7 +25,7 @@ type ConnMgr struct {
 
 func NewConnMgr() *ConnMgr {
 	c := &ConnMgr{
-		conns:           make(map[uuid.UUID]iface.IConnection),
+		conns:           make(map[uuid.UUID]iface.ISession),
 		heartBeatTicker: time.NewTicker(time.Duration(utils.Conf.Server.HeartBeatTick) * time.Second),
 	}
 
@@ -35,10 +35,10 @@ func NewConnMgr() *ConnMgr {
 			c.mtx.Lock()
 			// 时刻到，检查心跳情况
 			for _, conn := range c.conns {
-				go func(conn iface.IConnection) {
+				go func(conn iface.ISession) {
 					if conn.HeartBeat() < 5 {
-						conn.(*Connection).heartbeat++
-						conn.(*Connection).SendMsg(message.NewSeqedTLVMsg(0, job.HeartBeatTag, nil))
+						conn.(*Session).heartbeat++
+						conn.(*Session).SendMsg(message.NewSeqedTLVMsg(0, job.HeartBeatTag, nil))
 					} else {
 						// 说明已经5 * utils.Conf.Server.HeartBeatTick秒未收到该客户端的心跳包，判定该客户端已经掉线
 						log.Printf("Conn %s is timeout, maybe offline", conn.ConnID())
@@ -53,7 +53,7 @@ func NewConnMgr() *ConnMgr {
 	return c
 }
 
-func (c *ConnMgr) Add(conn iface.IConnection) {
+func (c *ConnMgr) Add(conn iface.ISession) {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
 	if _, exists := c.conns[conn.ConnID()]; exists {
@@ -79,7 +79,7 @@ func (c *ConnMgr) Del(connID uuid.UUID) {
 	}
 }
 
-func (c *ConnMgr) Get(connID uuid.UUID) iface.IConnection {
+func (c *ConnMgr) Get(connID uuid.UUID) iface.ISession {
 	c.mtx.RLock()
 	defer c.mtx.RUnlock()
 	return c.conns[connID]
@@ -104,4 +104,4 @@ func (c *ConnMgr) Clear() {
 	c.wg.Wait()
 }
 
-var _ iface.IConnMgr = (*ConnMgr)(nil)
+var _ iface.ISessionMgr = (*ConnMgr)(nil)

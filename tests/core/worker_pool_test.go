@@ -37,6 +37,10 @@ func (m *MockMsgQueue) Cap() int {
 	return args.Int(0)
 }
 
+func (m *MockMsgQueue) Close() {
+	m.Called()
+}
+
 // MockJobRouter 模拟 API 映射器
 type MockJobRouter struct {
 	mock.Mock
@@ -67,12 +71,12 @@ func (m *MockIRequest) Msg() iface.ISeqedTLVMsg {
 	return args.Get(0).(iface.ISeqedTLVMsg)
 }
 
-func (m *MockIRequest) Conn() iface.IConnection {
+func (m *MockIRequest) Session() iface.ISession {
 	args := m.Called()
 	if args.Get(0) == nil {
 		return nil
 	}
-	return args.Get(0).(iface.IConnection)
+	return args.Get(0).(iface.ISession)
 }
 
 // MockIMessage 模拟 IMessage 接口
@@ -110,6 +114,7 @@ func TestWorkerPool(t *testing.T) {
 	t.Run("Start and Stop", func(t *testing.T) {
 		mockMQ.On("Pop").Return(mockRequest).Once()
 		mockMQ.On("Pop").Return(nil) // Simulate no more messages
+		mockMQ.On("Close").Return().Once()
 
 		pool.Start()
 		pool.Stop()

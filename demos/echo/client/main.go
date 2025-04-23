@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"my-zinx/zinx/core/connection"
 	"my-zinx/zinx/core/job"
 	"my-zinx/zinx/core/message"
+	"my-zinx/zinx/core/session"
 	"net"
 	"time"
 )
@@ -18,7 +18,7 @@ func main() {
 		fmt.Println("client start err: ", err)
 		return
 	}
-	conn := connection.NewConnection(peer, context.Background(), nil)
+	conn := session.NewConnection(peer, context.Background(), nil)
 
 	go doHeartBeat(conn)
 	go doEcho(conn, 0)
@@ -27,7 +27,7 @@ func main() {
 	select {}
 }
 
-func doHeartBeat(conn *connection.Connection) {
+func doHeartBeat(conn *session.Session) {
 	ticker := time.NewTicker(time.Second)
 	for curTime := range ticker.C {
 		msgSent := message.NewSeqedTLVMsg(0, job.HeartBeatTag, nil)
@@ -45,7 +45,7 @@ func doHeartBeat(conn *connection.Connection) {
 	}
 }
 
-func doEcho(conn *connection.Connection, id uint16) {
+func doEcho(conn *session.Session, id uint16) {
 	var serial uint32 = 0
 	for {
 		msgSent := message.NewSeqedTLVMsg(serial, id, fmt.Appendf(nil, "hello ZINX %d", id))

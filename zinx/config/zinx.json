@@ -9,5 +9,10 @@
         "max_msg_queue_size": 50,
         "max_packet_size": 4096,
         "max_worker_pool_size": 10
+    },
+    "log": {
+        "level": 0,
+        "format": "[%t] [%c %l] [%f:%L:%g] %m",
+        "max_log_size": 104857600
     }
 }

@@ -1,4 +1,4 @@
-package connection
+package session
 
 import (
 	"context"
@@ -17,59 +17,59 @@ import (
 )
 
 type zHooks struct {
-	OnOpen     ConnHook
-	OnClose    ConnHook
-	BeforeSend ConnHook
-	BeforeRecv ConnHook
-	AfterSend  ConnHook
-	AfterRecv  ConnHook
+	OnOpen     SessionHook
+	OnClose    SessionHook
+	BeforeSend SessionHook
+	BeforeRecv SessionHook
+	AfterSend  SessionHook
+	AfterRecv  SessionHook
 }
 
-type ConnHook func(iface.IConnection)
-type zHookOpt func(c *Connection)
+type SessionHook func(iface.ISession)
+type zHookOpt func(c *Session)
 
 // 定义一个空函数
-var noOp ConnHook = func(iface.IConnection) {}
+var noOp SessionHook = func(iface.ISession) {}
 
-func OnOpen(f ConnHook) zHookOpt {
-	return func(c *Connection) {
+func OnOpen(f SessionHook) zHookOpt {
+	return func(c *Session) {
 		c.hookStub.OnOpen = f
 	}
 }
 
-func OnClose(f ConnHook) zHookOpt {
-	return func(c *Connection) {
+func OnClose(f SessionHook) zHookOpt {
+	return func(c *Session) {
 		c.hookStub.OnClose = f
 	}
 }
 
-func BeforeSend(f ConnHook) zHookOpt {
-	return func(c *Connection) {
+func BeforeSend(f SessionHook) zHookOpt {
+	return func(c *Session) {
 		c.hookStub.BeforeSend = f
 	}
 }
 
-func BeforeRecv(f ConnHook) zHookOpt {
-	return func(c *Connection) {
+func BeforeRecv(f SessionHook) zHookOpt {
+	return func(c *Session) {
 		c.hookStub.BeforeRecv = f
 	}
 }
 
-func AfterSend(f ConnHook) zHookOpt {
-	return func(c *Connection) {
+func AfterSend(f SessionHook) zHookOpt {
+	return func(c *Session) {
 		c.hookStub.AfterSend = f
 	}
 }
 
-func AfterRecv(f ConnHook) zHookOpt {
-	return func(c *Connection) {
+func AfterRecv(f SessionHook) zHookOpt {
+	return func(c *Session) {
 		c.hookStub.AfterRecv = f
 	}
 }
 
-// Connection
+// Session
 // 将裸的TCP socket包装，将具体的业务与连接绑定
-type Connection struct {
+type Session struct {
 	// 当前连接的socket TCP套接字
 	conn *net.TCPConn
 	// 当前连接的ID 也可以称作为SessionID，ID全局唯一
@@ -92,8 +92,8 @@ type Connection struct {
 	valuedCtx utils.Context
 }
 
-func NewConnection(conn *net.TCPConn, parent context.Context, wokerPool *job.WokerPool, opts ...zHookOpt) *Connection {
-	c := &Connection{
+func NewConnection(conn *net.TCPConn, parent context.Context, wokerPool *job.WokerPool, opts ...zHookOpt) *Session {
+	c := &Session{
 		conn:      conn,
 		connID:    uuid.New(),
 		isClosed:  atomic.Bool{},
@@ -119,7 +119,7 @@ func NewConnection(conn *net.TCPConn, parent context.Context, wokerPool *job.Wok
 	return c
 }
 
-func (c *Connection) Open() error {
+func (c *Session) Open() error {
 	// 启动IO协程负责该连接的读写操作
 	go c.Reader()
 	go c.Writer()
@@ -133,7 +133,7 @@ func (c *Connection) Open() error {
 	return nil
 }
 
-func (c *Connection) Close() {
+func (c *Session) Close() {
 	if c.isClosed.Load() {
 		return
 	}
@@ -148,37 +148,37 @@ func (c *Connection) Close() {
 	close(c.exitCh)
 }
 
-func (c *Connection) ConnID() uuid.UUID {
+func (c *Session) ConnID() uuid.UUID {
 	return c.connID
 }
 
-func (c *Connection) Conn() net.Conn {
+func (c *Session) Conn() net.Conn {
 	return c.conn
 }
 
-func (c *Connection) UpdateHeartBeat() {
+func (c *Session) UpdateHeartBeat() {
 	c.heartbeat = 0
 }
 
-func (c *Connection) HeartBeat() uint {
+func (c *Session) HeartBeat() uint {
 	return c.heartbeat
 }
 
-func (c *Connection) Send(data []byte) (int, error) {
+func (c *Session) Send(data []byte) (int, error) {
 	if c.isClosed.Load() {
 		return 0, errors.New("connection is closed")
 	}
 	return c.conn.Write(data)
 }
 
-func (c *Connection) Recv(data []byte) (int, error) {
+func (c *Session) Recv(data []byte) (int, error) {
 	if c.isClosed.Load() {
 		return 0, errors.New("connection is closed")
 	}
 	return c.conn.Read(data)
 }
 
-func (c *Connection) SendMsg(msg iface.IPacket) error {
+func (c *Session) SendMsg(msg iface.IPacket) error {
 	if c.isClosed.Load() {
 		return errors.New("connection is closed")
 	}
@@ -196,7 +196,7 @@ func (c *Connection) SendMsg(msg iface.IPacket) error {
 }
 
 // TODO 这种接口作为传出参数，不用指针能否实现传出修改？
-func (c *Connection) RecvMsg(msg iface.IPacket) error {
+func (c *Session) RecvMsg(msg iface.IPacket) error {
 	if c.isClosed.Load() {
 		return errors.New("connection is closed")
 	}
@@ -224,16 +224,16 @@ func (c *Connection) RecvMsg(msg iface.IPacket) error {
 	return nil
 }
 
-func (c *Connection) ExitChan() chan struct{} {
+func (c *Session) ExitChan() chan struct{} {
 	return c.exitCh
 }
 
 // 确保 Connection 实现 iface.IConenction 方法
-var _ iface.IConnection = (*Connection)(nil)
+var _ iface.ISession = (*Session)(nil)
 
 // Reader 是用于读取客户端数据的 Goroutine
 // 会需要与主协程通过chan通信
-func (c *Connection) Reader() {
+func (c *Session) Reader() {
 	log.Println("Reader Goroutine is running")
 	defer log.Println(c.Conn().RemoteAddr().String(), " Reader Goroutine exit!")
 	defer c.Close() // 确保连接能被关闭
@@ -254,7 +254,7 @@ func (c *Connection) Reader() {
 
 // Writer 是用于向客户端发送数据的 Goroutine
 // 会需要与主协程通过chan通信
-func (c *Connection) Writer() {
+func (c *Session) Writer() {
 	log.Println("Writer Goroutine is running")
 	defer log.Println(c.Conn().RemoteAddr().String(), " Writer Goroutine exit!")
 	for {
