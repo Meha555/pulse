@@ -48,7 +48,7 @@ func doHeartBeat(conn *session.Session) {
 func doEcho(conn *session.Session, id uint16) {
 	var serial uint32 = 0
 	for {
-		msgSent := message.NewSeqedTLVMsg(serial, id, fmt.Appendf(nil, "hello ZINX %d", id))
+		msgSent := message.NewSeqedTLVMsg(serial, id, fmt.Appendf(nil, "hello ZINX [%d]", id))
 		data, err := message.Marshal(msgSent)
 		if err != nil {
 			Log.Errorf("Marshal error: %v", err)
@@ -68,7 +68,11 @@ func doEcho(conn *session.Session, id uint16) {
 			return
 		}
 
-		Log.Infof("read: %d %d %s\n", msg.Serial(), msg.Tag(), string(msg.Body()))
+		Log.Infof("[%d] read: %d [%d] %s\n", id, msg.Serial(), msg.Tag(), string(msg.Body()))
+		if msg.Tag() != id {
+			// 服务端只是返回属于该连接的消息，至于消息到底给到哪个协程，这个是客户端需要实现的
+			Log.Warnf("want: %d, got: %d", id, msg.Tag())
+		}
 
 		time.Sleep(time.Duration(1<<id) * time.Second)
 	}
