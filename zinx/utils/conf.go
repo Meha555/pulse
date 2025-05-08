@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/google/uuid"
 )
 
 type zServerConf struct {
@@ -57,7 +59,7 @@ func init() {
 	Conf = &zConfig{
 		Server: zServerConf{
 			Host:              "0.0.0.0",
-			Name:              "MY-ZINX Server",
+			Name:              "MY-ZINX Server@" + uuid.New().String(),
 			Port:              3333,
 			HeartBeatTick:     3,
 			ConnTimeout:       60,

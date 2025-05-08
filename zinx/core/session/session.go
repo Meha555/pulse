@@ -1,7 +1,6 @@
 package session
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -93,7 +92,7 @@ type Session struct {
 	hookStub zHooks
 }
 
-func NewSession(conn *net.TCPConn, parent context.Context, workerPool *job.WorkerPool, opts ...zHookOpt) *Session {
+func NewSession(conn *net.TCPConn, workerPool *job.WorkerPool, opts ...zHookOpt) *Session {
 	c := &Session{
 		conn:       conn,
 		sessionID:  uuid.New(),
@@ -203,10 +202,10 @@ func (c *Session) RecvMsg(msg iface.IPacket) error {
 	defer c.hookStub.AfterRecv(c)
 	headerData := make([]byte, msg.HeaderLen())
 	if _, err := io.ReadFull(c.conn, headerData); err != nil {
-		return fmt.Errorf("read header error: %v", err)
+		return fmt.Errorf("read header error: %w", err)
 	}
 	if err := message.Unmarshal(headerData, msg, false); err != nil {
-		return fmt.Errorf("unmarshal header err: %v", err)
+		return fmt.Errorf("unmarshal header err: %w", err)
 	}
 	// 读取负载
 	if msg.BodyLen() <= 0 {
@@ -214,10 +213,10 @@ func (c *Session) RecvMsg(msg iface.IPacket) error {
 	}
 	bodyData := make([]byte, msg.BodyLen())
 	if _, err := io.ReadFull(c.conn, bodyData); err != nil {
-		return fmt.Errorf("read body error: %v", err)
+		return fmt.Errorf("read body error: %w", err)
 	}
 	if err := message.UmarshalBodyOnly(bodyData, int(msg.BodyLen()), msg); err != nil {
-		return fmt.Errorf("unmarshal body error: %v", err)
+		return fmt.Errorf("unmarshal body error: %w", err)
 	}
 	return nil
 }

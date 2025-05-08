@@ -19,8 +19,7 @@ type JobRouter struct {
 }
 
 func NewJobRouter() *JobRouter {
-	return &JobRouter{
-	}
+	return &JobRouter{}
 }
 
 func (r *JobRouter) GetJob(tag uint16) iface.IJob {
@@ -37,15 +36,15 @@ func (r *JobRouter) AddJob(tag uint16, job iface.IJob) iface.IJobRouter {
 	return r
 }
 
-func (r *JobRouter) ExecJob(tag uint16, request iface.IRequest) error {
+func (r *JobRouter) ExecJob(tag uint16, req iface.IRequest) error {
 	if job, ok := r.apis.Load(tag); ok {
-		if err := job.PreHandle(request); err != nil {
+		if err := job.PreHandle(req); err != nil {
 			return fmt.Errorf("call PreHandle error: %v", err)
 		}
-		if err := job.Handle(request); err != nil {
+		if err := job.Handle(req); err != nil {
 			return fmt.Errorf("call Handle error: %v", err)
 		}
-		if err := job.PostHandle(request); err != nil {
+		if err := job.PostHandle(req); err != nil {
 			return fmt.Errorf("call PostHandle error: %v", err)
 		}
 		return nil

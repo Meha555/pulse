@@ -3,9 +3,9 @@ package iface
 // IJob 具体的业务逻辑
 type IJob interface {
 	// 处理业务之前的钩子方法
-	PreHandle(request IRequest) error
+	PreHandle(req IRequest) error
 	// 处理业务的主方法
-	Handle(request IRequest) error
+	Handle(req IRequest) error
 	// 处理业务之后的钩子方法
-	PostHandle(request IRequest) error
+	PostHandle(req IRequest) error
 }

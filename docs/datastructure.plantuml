@@ -9,9 +9,9 @@ namespace iface {
 
     }
     interface IJob  {
-        + PreHandle(request IRequest) error
-        + Handle(request IRequest) error
-        + PostHandle(request IRequest) error
+        + PreHandle(req IRequest) error
+        + Handle(req IRequest) error
+        + PostHandle(req IRequest) error
 
     }
     interface IJobRouter  {

@@ -1,9 +1,15 @@
 package iface
 
+import (
+	"context"
+	"net"
+)
+
 type IClient interface {
 	Connect() error
-	Exit()
-	Conn() ISession
+	Start(parent context.Context, fns ...func())
+	Close()
+	Conn() net.TCPConn
 	SendMsg(msg IPacket) error
 	RecvMsg(msg IPacket) error
 }

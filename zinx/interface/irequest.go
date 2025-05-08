@@ -9,4 +9,8 @@ type IRequest interface {
 	Session() ISession
 	// 获取请求数据
 	Msg() ISeqedTLVMsg
+	// 设置传递的参数（上下文）
+	Set(key string, value interface{})
+	// 获取传递的参数（上下文）
+	Get(key string) (interface{}, bool)
 }

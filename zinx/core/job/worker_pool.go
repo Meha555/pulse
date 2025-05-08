@@ -44,7 +44,7 @@ func (w *WorkerPool) Start() {
 					if request := w.mq.Pop(); request != nil {
 						logger.Debugf("Worker[%d] processing request", workerID)
 						if err := w.processRequest(request); err != nil {
-							logger.Debugf("Worker[%d] process request failed: %v", workerID, err)
+							logger.Errorf("Worker[%d] process request failed: %v", workerID, err)
 						}
 					}
 				}

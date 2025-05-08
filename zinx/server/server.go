@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"fmt"
 	"my-zinx/zinx/core/job"
 	"my-zinx/zinx/core/session"
@@ -89,7 +88,7 @@ func (s *Server) Listen() {
 			}
 			logger.Debugf("New connection from %s", peer.RemoteAddr())
 
-			clientSession := session.NewSession(peer, context.Background(), s.workerPool)
+			clientSession := session.NewSession(peer, s.workerPool)
 			s.sessionMgr.Add(clientSession)
 			// 启动子协程处理业务
 			go clientSession.Open()
@@ -101,7 +100,7 @@ func (s *Server) Serve() {
 	logger.Debug("Server Serve")
 
 	// 等待中断信号以优雅地关闭服务器（设置 5 秒的超时时间）
-	quitCh := make(chan os.Signal, 1) // REVIEW 这里为啥必须是1的buffered chan
+	quitCh := make(chan os.Signal, 1)
 	signal.Notify(quitCh, syscall.SIGINT, syscall.SIGTERM)
 	<-quitCh
 	s.Shutdown()

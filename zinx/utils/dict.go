@@ -1,10 +1,12 @@
 package utils
 
 import (
+	iface "my-zinx/zinx/interface"
 	"sync"
 	"sync/atomic"
 )
 
+// Dict 并发安全的字典类型
 type Dict[K comparable, V any] struct {
 	// dict map[string]interface{}
 	dict sync.Map
@@ -53,7 +55,7 @@ func (d *Dict[K, V]) Delete(key K) {
 	// if d.dict == nil {
 	// 	d.dict = make(map[string]interface{})
 	// }
-	if (d.size.Load() == 0) {
+	if d.size.Load() == 0 {
 		return
 	}
 	d.dict.Delete(key)
@@ -97,3 +99,7 @@ func (d *Dict[K, V]) Iter() <-chan struct {
 
 	return ch
 }
+
+// 由于 comparable 不能在类型约束外使用，这里需要使用具体的类型参数。
+// 假设 IMap 接口期望的是具体的可比较类型，这里使用 string 作为示例。
+var _ iface.IMap[string, any] = (*Dict[string, any])(nil)
