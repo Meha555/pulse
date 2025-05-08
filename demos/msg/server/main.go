@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
-	"my-zinx/zinx/core/message"
+	"my-zinx/core/message"
 	"net"
 )
 

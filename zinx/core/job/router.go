@@ -2,8 +2,8 @@ package job
 
 import (
 	"fmt"
-	iface "my-zinx/zinx/interface"
-	"my-zinx/zinx/utils"
+	iface "my-zinx/interface"
+	"my-zinx/utils"
 )
 
 // Api Tags

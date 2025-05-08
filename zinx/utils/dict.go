@@ -1,7 +1,7 @@
 package utils
 
 import (
-	iface "my-zinx/zinx/interface"
+	iface "my-zinx/interface"
 	"sync"
 	"sync/atomic"
 )

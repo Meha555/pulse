@@ -1,7 +1,7 @@
 package job
 
 import (
-	iface "my-zinx/zinx/interface"
+	iface "my-zinx/interface"
 	"sync"
 )
 

@@ -4,14 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"my-zinx/zinx/core/job"
-	"my-zinx/zinx/core/message"
-	iface "my-zinx/zinx/interface"
-	utils "my-zinx/zinx/utils"
+	"my-zinx/core/job"
+	"my-zinx/core/message"
+	iface "my-zinx/interface"
+	utils "my-zinx/utils"
 	"net"
 	"sync/atomic"
 
-	"my-zinx/zinx/log"
+	"my-zinx/log"
 
 	"github.com/google/uuid"
 )

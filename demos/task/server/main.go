@@ -1,8 +1,8 @@
 package main
 
 import (
-	. "my-zinx/zinx/log"
-	"my-zinx/zinx/server"
+	. "my-zinx/log"
+	"my-zinx/server"
 )
 
 /*

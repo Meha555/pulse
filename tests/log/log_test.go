@@ -1,7 +1,7 @@
 package log_test
 
 import (
-	"my-zinx/zinx/log"
+	"my-zinx/log"
 	"sync"
 	"testing"
 )

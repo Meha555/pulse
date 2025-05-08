@@ -4,9 +4,9 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"my-zinx/zinx/core/message"
-	"my-zinx/zinx/core/session"
-	iface "my-zinx/zinx/interface"
+	"my-zinx/core/message"
+	"my-zinx/core/session"
+	iface "my-zinx/interface"
 	"unsafe"
 )
 

@@ -2,7 +2,7 @@ package core_test
 
 import (
 	"bytes"
-	"my-zinx/zinx/core/message"
+	"my-zinx/core/message"
 	"testing"
 )
 

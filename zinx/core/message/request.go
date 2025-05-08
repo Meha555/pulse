@@ -2,7 +2,7 @@ package message
 
 import (
 	"context"
-	iface "my-zinx/zinx/interface"
+	iface "my-zinx/interface"
 )
 
 type Request struct {

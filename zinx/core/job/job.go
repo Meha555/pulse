@@ -1,8 +1,8 @@
 package job
 
 import (
-	iface "my-zinx/zinx/interface"
-	"my-zinx/zinx/log"
+	iface "my-zinx/interface"
+	"my-zinx/log"
 )
 
 var logger = log.NewStdLogger(log.LevelDebug, "job", "[%t] [%c %l] [%f:%C:%L:%g] %m", false)

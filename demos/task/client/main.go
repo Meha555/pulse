@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"my-zinx/zinx/client"
-	"my-zinx/zinx/core/message"
-	. "my-zinx/zinx/log"
+	"my-zinx/client"
+	"my-zinx/core/message"
+	. "my-zinx/log"
 	"time"
 )
 

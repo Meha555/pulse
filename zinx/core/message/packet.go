@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	iface "my-zinx/zinx/interface"
+	iface "my-zinx/interface"
 )
 
 // NOTE 这里是应用层协议，所以使用主机字节序即可

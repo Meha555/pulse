@@ -1,6 +1,6 @@
 package job
 
-import iface "my-zinx/zinx/interface"
+import iface "my-zinx/interface"
 
 // 由于是channel，因此内部有锁，是并发安全的
 type MsgQueue chan iface.IRequest

@@ -2,11 +2,11 @@ package server
 
 import (
 	"fmt"
-	"my-zinx/zinx/core/job"
-	"my-zinx/zinx/core/session"
-	iface "my-zinx/zinx/interface"
-	"my-zinx/zinx/log"
-	"my-zinx/zinx/utils"
+	"my-zinx/core/job"
+	"my-zinx/core/session"
+	iface "my-zinx/interface"
+	"my-zinx/log"
+	"my-zinx/utils"
 	"net"
 	"os"
 	"os/signal"

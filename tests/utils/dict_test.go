@@ -3,7 +3,7 @@ package utils_test
 import (
 	"testing"
 
-	"my-zinx/zinx/utils"
+	"my-zinx/utils"
 )
 
 func TestDict(t *testing.T) {

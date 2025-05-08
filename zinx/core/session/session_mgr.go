@@ -1,10 +1,10 @@
 package session
 
 import (
-	"my-zinx/zinx/core/job"
-	"my-zinx/zinx/core/message"
-	iface "my-zinx/zinx/interface"
-	"my-zinx/zinx/utils"
+	"my-zinx/core/job"
+	"my-zinx/core/message"
+	iface "my-zinx/interface"
+	"my-zinx/utils"
 	"sync"
 	"time"
 
@@ -24,7 +24,7 @@ type SessionMgr struct {
 
 func NewSessionMgr() *SessionMgr {
 	c := &SessionMgr{
-		sessionMap:        make(map[uuid.UUID]iface.ISession),
+		sessionMap:      make(map[uuid.UUID]iface.ISession),
 		heartBeatTicker: time.NewTicker(time.Duration(utils.Conf.Server.HeartBeatTick) * time.Second),
 	}
 
