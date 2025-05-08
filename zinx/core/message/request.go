@@ -16,8 +16,9 @@ type Request struct {
 
 func NewRequest(conn iface.ISession, msg iface.ISeqedTLVMsg) *Request {
 	return &Request{
-		session: conn,
-		msg:     msg,
+		session:  conn,
+		msg:      msg,
+		valueCtx: context.Background(),
 	}
 }
 

@@ -23,6 +23,9 @@ type ISession interface {
 	HeartBeat() uint
 	// 获取可读写的退出chan
 	ExitChan() <-chan struct{}
+
+	SendMsg(msg IPacket) error
+	RecvMsg(msg IPacket) error
 }
 
 // 所有Connection在处理业务时的钩子方法的函数签名

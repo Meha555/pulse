@@ -19,7 +19,7 @@ import (
 	"github.com/google/uuid"
 )
 
-var logger = log.NewStdLogger(log.LevelDebug, "client", "[%t] [%c %l] [%f:%C:%L:%g] %m", false)
+var logger = log.NewStdLogger(log.LevelInfo, "client", "[%t] [%c %l] [%f:%C:%L:%g] %m", false)
 
 type counter struct {
 	count uint32
@@ -75,6 +75,8 @@ func (c *Client) Connect() error {
 	return nil
 }
 
+// Start 启动客户端业务。
+// 客户端业务由fn执行，所有由fn托管的业务逻辑可以保证客户端退出时业务已经结束（在不超时的情况下）
 func (c *Client) Start(parent context.Context, fns ...func()) {
 	logger.Info("client start with jobs...")
 	// c.wg.Add(1)

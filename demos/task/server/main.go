@@ -1,6 +1,8 @@
 package main
 
 import (
+	jobs "example/demos/task"
+	"my-zinx/log"
 	. "my-zinx/log"
 	"my-zinx/server"
 )
@@ -24,13 +26,15 @@ import (
 3. 客户端需要能路由到对应的请求者
 */
 
+// go run demos/task/server/main.go demos/task/server/caculate.go
 func main() {
+	Log.SetLevel(log.LevelDebug)
 	s := server.NewServer()
 	factory := CalculateJobFactory{}
-	s.Route(AddJobTag, factory.CreateCalculator(AddJobTag)).
-		Route(SubJobTag, factory.CreateCalculator(SubJobTag)).
-		Route(MulJobTag, factory.CreateCalculator(MulJobTag)).
-		Route(DivJobTag, factory.CreateCalculator(DivJobTag))
+	s.Route(jobs.AddJobTag, factory.CreateCalculator(jobs.AddJobTag)).
+		Route(jobs.SubJobTag, factory.CreateCalculator(jobs.SubJobTag)).
+		Route(jobs.MulJobTag, factory.CreateCalculator(jobs.MulJobTag)).
+		Route(jobs.DivJobTag, factory.CreateCalculator(jobs.DivJobTag))
 	s.ListenAndServe()
 	Log.Info("Server exit")
 }

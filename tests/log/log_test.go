@@ -7,8 +7,8 @@ import (
 )
 
 func TestLogConcurrency(t *testing.T) {
-	logger1 := log.NewStdLogger(log.LevelDebug, "concurrency", "[%t] [%c %l] [%f:%C:%L:%g] %m", false)
-	logger2 := log.NewStdLogger(log.LevelDebug, "concurrency", "[%t] [%c %l] [%f:%C:%L:%g] %m", true)
+	logger1 := log.NewStdLogger(log.LevelInfo, "concurrency", "[%t] [%c %l] [%f:%C:%L:%g] %m", false)
+	logger2 := log.NewStdLogger(log.LevelInfo, "concurrency", "[%t] [%c %l] [%f:%C:%L:%g] %m", true)
 	goroutineNum := 500
 	var wg sync.WaitGroup
 	for i := range goroutineNum {
@@ -35,7 +35,7 @@ func TestLogConcurrency(t *testing.T) {
 }
 
 func TestStdLog(t *testing.T) {
-	stdLogger := log.NewStdLogger(log.LevelDebug, "STD_LOG_TEST", "[%t] [%c %l] [%f:%C:%L:%g] %m", true)
+	stdLogger := log.NewStdLogger(log.LevelInfo, "STD_LOG_TEST", "[%t] [%c %l] [%f:%C:%L:%g] %m", true)
 	t.Run("Print", func(t *testing.T) {
 		stdLogger.Debug("This is a debug message")
 		stdLogger.Info("This is an info message")

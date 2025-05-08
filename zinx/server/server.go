@@ -13,7 +13,7 @@ import (
 	"syscall"
 )
 
-var logger = log.NewStdLogger(log.LevelDebug, "server", "[%t] [%c %l] [%f:%C:%L:%g] %m", false)
+var logger = log.NewStdLogger(log.LevelInfo, "server", "[%t] [%c %l] [%f:%C:%L:%g] %m", false)
 
 type Server struct {
 	Name      string
@@ -30,7 +30,7 @@ type Server struct {
 
 func NewServer() *Server {
 	// 消息队列（worker协程从中取数据）mq容量和worker数量相同。mq容量更大没意义
-	mq := job.NewMsgQueue(int(utils.Conf.Server.MaxWorkerPoolSize))
+	mq := utils.NewBlockingQueue[iface.IRequest](int(utils.Conf.Server.MaxWorkerPoolSize))
 	router := job.NewJobRouter()
 	return &Server{
 		Name:       utils.Conf.Server.Name,

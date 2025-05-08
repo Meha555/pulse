@@ -1,8 +1,8 @@
 package iface
 
-type IQueue interface {
-	Push(request IRequest)
-	Pop() IRequest
+type IQueue[T any] interface {
+	Push(request T)
+	Pop() T
 	Len() int
 	Cap() int
 	Close()

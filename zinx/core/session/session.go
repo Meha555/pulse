@@ -16,7 +16,7 @@ import (
 	"github.com/google/uuid"
 )
 
-var logger = log.NewStdLogger(log.LevelDebug, "session", "[%t] [%c %l] [%f:%C:%L:%g] %m", false)
+var logger = log.NewStdLogger(log.LevelInfo, "session", "[%t] [%c %l] [%f:%C:%L:%g] %m", false)
 
 type zHooks struct {
 	OnOpen     SessionHook
