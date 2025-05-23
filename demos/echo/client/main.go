@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"my-zinx/core/message"
+	. "my-zinx/logging"
 	"my-zinx/server/job"
 	"my-zinx/server/session"
-	. "my-zinx/log"
 	"net"
 	"time"
 )
@@ -85,7 +85,7 @@ import (
 	"fmt"
 	"my-zinx/client"
 	"my-zinx/core/message"
-	. "my-zinx/log"
+	. "my-zinx/logging"
 	"time"
 )
 

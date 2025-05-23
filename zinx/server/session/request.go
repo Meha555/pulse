@@ -2,7 +2,7 @@ package session
 
 import (
 	"context"
-	"my-zinx/core"
+	"my-zinx/core/message"
 	"my-zinx/server/common"
 )
 
@@ -10,12 +10,12 @@ type Request struct {
 	// 已经和客户端建立好的连接会话
 	session common.ISession
 	// 客户端请求的数据（要求是顺序的TLV消息）
-	msg core.ISeqedTLVMsg
+	msg message.ISeqedTLVMsg
 	// 传递的参数（上下文）
 	valueCtx context.Context
 }
 
-func NewRequest(conn common.ISession, msg core.ISeqedTLVMsg) *Request {
+func NewRequest(conn common.ISession, msg message.ISeqedTLVMsg) *Request {
 	return &Request{
 		session:  conn,
 		msg:      msg,
@@ -27,7 +27,7 @@ func (r *Request) Session() common.ISession {
 	return r.session
 }
 
-func (r *Request) Msg() core.ISeqedTLVMsg {
+func (r *Request) Msg() message.ISeqedTLVMsg {
 	return r.msg
 }
 

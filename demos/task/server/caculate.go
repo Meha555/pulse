@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"my-zinx/core/message"
 	"my-zinx/server/common"
+	"my-zinx/server/job"
 
-	. "my-zinx/log"
+	. "my-zinx/logging"
 
 	"github.com/google/uuid"
 )
@@ -64,7 +65,7 @@ func (j *CalculateJob) PostHandle(req common.IRequest) error {
 		ID:  ID,
 		Res: Res,
 	}
-	Log.Warnf("Res: %+v", arg)
+	Log.Warnf("Response: %+v", arg)
 	data, err := arg.MarshalBinary()
 	if err != nil {
 		return fmt.Errorf("response marshal error: %w", err)
@@ -96,7 +97,7 @@ type DivJob struct {
 // Simple Factory
 type CalculateJobFactory struct{}
 
-func (f *CalculateJobFactory) CreateCalculator(tag uint16) common.IJob {
+func (f *CalculateJobFactory) CreateCalculator(tag uint16) job.IJob {
 	switch tag {
 	case task.AddJobTag:
 		return &AddJob{

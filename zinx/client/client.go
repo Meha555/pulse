@@ -5,9 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"my-zinx/core"
 	"my-zinx/core/message"
-	log "my-zinx/log"
+	log "my-zinx/logging"
 	"my-zinx/server/job"
 	"net"
 	"os"
@@ -55,6 +54,32 @@ func NewClient(ip string, port uint16, opts ...ClientOptions) *Client {
 	c.Connect()
 
 	return c
+}
+
+type ClientOptions func(*Client)
+
+func WithName(name string) ClientOptions {
+	return func(cli *Client) {
+		cli.Name = name
+	}
+}
+
+func WithIPVersion(network string) ClientOptions {
+	return func(cli *Client) {
+		cli.IPVersion = network
+	}
+}
+
+func WithExitTimeout(timeout int) ClientOptions {
+	return func(cli *Client) {
+		cli.exitTimeout = time.Duration(timeout)
+	}
+}
+
+func WithHeartBeatInterval(interval int) ClientOptions {
+	return func(cli *Client) {
+		cli.heartBeatInterval = time.Duration(interval)
+	}
 }
 
 func (c *Client) Connect() error {
@@ -126,7 +151,7 @@ func (c *Client) Conn() net.TCPConn {
 	return *c.conn
 }
 
-func (c *Client) SendMsg(msg core.IPacket) error {
+func (c *Client) SendMsg(msg message.IPacket) error {
 	if c.conn == nil {
 		return errors.New("connection is closed")
 	}
@@ -142,7 +167,7 @@ func (c *Client) SendMsg(msg core.IPacket) error {
 	return nil
 }
 
-func (c *Client) RecvMsg(msg core.IPacket) error {
+func (c *Client) RecvMsg(msg message.IPacket) error {
 	if c.conn == nil {
 		return errors.New("connection is closed")
 	}

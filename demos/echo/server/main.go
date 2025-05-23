@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	. "my-zinx/log"
+	. "my-zinx/logging"
 	"my-zinx/server"
 	"my-zinx/server/common"
 	"my-zinx/server/job"

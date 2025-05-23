@@ -1,28 +1,52 @@
 package utils
 
 import (
+	"errors"
 	"sync"
 	"sync/atomic"
 )
 
 type IMap[K comparable, V any] interface {
-	Store(key K, value any)
+	Store(key K, value any) error
 	Load(key K) (value V, exists bool)
 }
+
+const (
+	kDefaultCapacity = 256
+)
 
 // Dict 并发安全的字典类型
 type Dict[K comparable, V any] struct {
 	// dict map[string]interface{}
 	dict sync.Map
+	cap  atomic.Int32
 	size atomic.Int32 // TODO 近似值，因为没有把dict.Store和size.Store这种操作组合成原子操作。如果要做的话应该手动用无锁方式实现Dict类而不是靠sync.Map
 	// mtx  sync.RWMutex
 }
 
-// func NewDict() *Dict {
-// 	return &Dict{
-// 		dict: make(map[string]interface{}),
-// 	}
-// }
+var ErrDictIsFull = errors.New("dict is full")
+
+type dictOption[K comparable, V any] func(*Dict[K, V])
+
+func WithCapacity[K comparable, V any](cap int) dictOption[K, V] {
+	return func(d *Dict[K, V]) {
+		d.SetCapacity(int32(cap))
+	}
+}
+
+func NewDict[K comparable, V any](opts ...dictOption[K, V]) *Dict[K, V] {
+	d := &Dict[K, V]{
+		cap: atomic.Int32{},
+	}
+
+	for _, opt := range opts {
+		opt(d)
+	}
+
+	d.cap.CompareAndSwap(0, kDefaultCapacity)
+
+	return d
+}
 
 func (d *Dict[K, V]) Load(key K) (value V, exists bool) {
 	// d.mtx.RLock()
@@ -34,23 +58,29 @@ func (d *Dict[K, V]) Load(key K) (value V, exists bool) {
 	if !exists {
 		return
 	}
-	value, exists = val.(V)
-	if !exists {
-		panic(exists)
-	}
+	value = val.(V)
 	// value, exists = d.dict[key]
 	return
 }
 
-func (d *Dict[K, V]) Store(key K, value V) {
-	// d.mtx.Lock()
-	// defer d.mtx.Unlock()
-	// if d.dict == nil {
-	// 	d.dict = make(map[string]interface{})
-	// }
-	d.dict.Store(key, value)
-	d.size.Add(1)
-	// d.dict[key] = value
+func (d *Dict[K, V]) Store(key K, value V) error {
+	// 如果 CompareAndSwap 失败，说明 size 被其他 goroutine 修改，继续循环重试
+	for {
+		// d.mtx.Lock()
+		// defer d.mtx.Unlock()
+		// if d.dict == nil {
+		// 	d.dict = make(map[string]interface{})
+		// }
+		oldSize := d.size.Load()
+		if oldSize >= d.cap.Load() {
+			return ErrDictIsFull
+		}
+		if d.size.CompareAndSwap(oldSize, oldSize+1) {
+			d.dict.Store(key, value)
+			return nil
+		}
+		// d.dict[key] = value
+	}
 }
 
 func (d *Dict[K, V]) Delete(key K) {
@@ -59,16 +89,25 @@ func (d *Dict[K, V]) Delete(key K) {
 	// if d.dict == nil {
 	// 	d.dict = make(map[string]interface{})
 	// }
-	if d.size.Load() == 0 {
+	if d.size.CompareAndSwap(0, 0) {
 		return
+	} else {
+		d.dict.Delete(key)
+		d.size.Add(-1)
 	}
-	d.dict.Delete(key)
-	d.size.Add(-1)
 	// delete(d.dict, key)
 }
 
 func (d *Dict[K, V]) Size() int32 {
 	return d.size.Load()
+}
+
+func (d *Dict[K, V]) Capacity() int32 {
+	return d.cap.Load()
+}
+
+func (d *Dict[K, V]) SetCapacity(cap int32) {
+	d.cap.Store(cap)
 }
 
 func (d *Dict[K, V]) Range(f func(key K, value V) bool) {

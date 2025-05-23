@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"my-zinx/core"
 )
 
 // NOTE 这里是应用层协议，所以使用主机字节序即可
@@ -188,7 +187,7 @@ func unmarshalSeqedTLVMsg(data []byte, s *SeqedTLVMsg, readBody bool) error {
 	return nil
 }
 
-func UmarshalBodyOnly(bodyData []byte, bodyLen int, p core.IPacket) error {
+func UmarshalBodyOnly(bodyData []byte, bodyLen int, p IPacket) error {
 	reader := bytes.NewBuffer(bodyData)
 	// 分配足够的空间来存储body
 	body := make([]byte, bodyLen)

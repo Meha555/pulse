@@ -14,10 +14,10 @@ type MsgQueue = utils.BlockingQueue[common.IRequest]
 // - 支持提交消息到消息队列，并由空闲协程执行
 type WorkerPool struct {
 	core.WorkerPool[common.IRequest]
-	router common.IJobRouter // API映射（引用）
+	router IJobRouter // API映射（引用）
 }
 
-func NewWorkerPool(workers int, mq utils.IQueue[common.IRequest], router common.IJobRouter) *WorkerPool {
+func NewWorkerPool(workers int, mq utils.IQueue[common.IRequest], router IJobRouter) *WorkerPool {
 	return &WorkerPool{
 		WorkerPool: *core.NewWorkerPool(workers, mq, &JobProcesser{router: router}),
 		router:     router,
@@ -25,7 +25,7 @@ func NewWorkerPool(workers int, mq utils.IQueue[common.IRequest], router common.
 }
 
 type JobProcesser struct {
-	router common.IJobRouter // API映射（引用）
+	router IJobRouter // API映射（引用）
 }
 
 func (p *JobProcesser) Process(request common.IRequest) error {

@@ -3,7 +3,7 @@ package server
 import (
 	"fmt"
 
-	"my-zinx/log"
+	"my-zinx/logging"
 	"my-zinx/server/common"
 	"my-zinx/server/job"
 	"my-zinx/server/session"
@@ -14,7 +14,7 @@ import (
 	"syscall"
 )
 
-var logger = log.NewStdLogger(log.LevelInfo, "server", "[%t] [%c %l] [%f:%C:%L:%g] %m", false)
+var logger = logging.NewStdLogger(logging.LevelInfo, "server", "[%t] [%c %l] [%f:%C:%L:%g] %m", false)
 
 type Server struct {
 	Name      string
@@ -24,7 +24,7 @@ type Server struct {
 	// 连接管理器
 	sessionMgr common.ISessionMgr
 	// 映射请求到具体的API回调
-	jobRouter common.IJobRouter
+	jobRouter job.IJobRouter
 	// 工作协程池
 	workerPool *job.WorkerPool
 }
@@ -44,7 +44,7 @@ func NewServer() *Server {
 	}
 }
 
-func (s *Server) Route(tag uint16, job common.IJob) *Server {
+func (s *Server) Route(tag uint16, job job.IJob) *Server {
 	s.jobRouter.AddJob(tag, job)
 	return s
 }

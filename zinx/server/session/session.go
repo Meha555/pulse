@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"my-zinx/core"
 	"my-zinx/core/message"
 	"my-zinx/server/common"
 	"my-zinx/server/job"
@@ -13,12 +12,12 @@ import (
 	"net"
 	"sync/atomic"
 
-	"my-zinx/log"
+	"my-zinx/logging"
 
 	"github.com/google/uuid"
 )
 
-var logger = log.NewStdLogger(log.LevelInfo, "session", "[%t] [%c %l] [%f:%C:%L:%g] %m", false)
+var logger = logging.NewStdLogger(logging.LevelInfo, "session", "[%t] [%c %l] [%f:%C:%L:%g] %m", false)
 
 type zHooks struct {
 	OnOpen     SessionHook
@@ -178,7 +177,7 @@ func (c *Session) Recv(data []byte) (int, error) {
 	return c.conn.Read(data)
 }
 
-func (c *Session) SendMsg(msg core.IPacket) error {
+func (c *Session) SendMsg(msg message.IPacket) error {
 	if c.isClosed.Load() {
 		return errors.New("connection is closed")
 	}
@@ -196,7 +195,7 @@ func (c *Session) SendMsg(msg core.IPacket) error {
 }
 
 // NOTE 这种接口作为传出参数，不用指针可以实现传出修改
-func (c *Session) RecvMsg(msg core.IPacket) error {
+func (c *Session) RecvMsg(msg message.IPacket) error {
 	if c.isClosed.Load() {
 		return errors.New("connection is closed")
 	}

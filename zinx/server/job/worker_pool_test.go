@@ -1,4 +1,4 @@
-package core_test
+package job
 
 import (
 	"bytes"
@@ -6,9 +6,10 @@ import (
 	"regexp"
 	"testing"
 
-	"my-zinx/core"
+	logging "my-zinx/logging"
+
+	"my-zinx/core/message"
 	"my-zinx/server/common"
-	"my-zinx/server/job"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -52,14 +53,14 @@ func (m *MockJobRouter) ExecJob(tag uint16, request common.IRequest) error {
 	return args.Error(0)
 }
 
-func (m *MockJobRouter) AddJob(tag uint16, job common.IJob) common.IJobRouter {
+func (m *MockJobRouter) AddJob(tag uint16, job IJob) IJobRouter {
 	m.Called(tag, job)
 	return m
 }
 
-func (m *MockJobRouter) GetJob(tag uint16) common.IJob {
+func (m *MockJobRouter) GetJob(tag uint16) IJob {
 	args := m.Called(tag)
-	return args.Get(0).(common.IJob)
+	return args.Get(0).(IJob)
 }
 
 // MockIRequest 模拟 IRequest 接口
@@ -67,9 +68,9 @@ type MockIRequest struct {
 	mock.Mock
 }
 
-func (m *MockIRequest) Msg() core.ISeqedTLVMsg {
+func (m *MockIRequest) Msg() message.ISeqedTLVMsg {
 	args := m.Called()
-	return args.Get(0).(core.ISeqedTLVMsg)
+	return args.Get(0).(message.ISeqedTLVMsg)
 }
 
 func (m *MockIRequest) Session() common.ISession {
@@ -135,6 +136,7 @@ func TestWorkerPool(t *testing.T) {
 	var logBuffer bytes.Buffer
 	log.SetOutput(&logBuffer)
 	defer log.SetOutput(nil)
+	logger.SetLevel(logging.LevelDebug)
 
 	// Create mocks
 	mockMQ := new(MockMsgQueue)
@@ -151,7 +153,7 @@ func TestWorkerPool(t *testing.T) {
 	mockMapper.On("ExecJob", uint16(0), mockRequest).Return(nil)
 
 	// Initialize WorkerPool
-	pool := job.NewWorkerPool(2, mockMQ, mockMapper)
+	pool := NewWorkerPool(2, mockMQ, mockMapper)
 
 	// Test Start and Stop
 	t.Run("Start and Stop", func(t *testing.T) {
@@ -186,7 +188,7 @@ func TestWorkerPool(t *testing.T) {
 
 	// Test Start with zero workers
 	t.Run("Start with zero workers", func(t *testing.T) {
-		poolZero := job.NewWorkerPool(0, mockMQ, mockMapper)
+		poolZero := NewWorkerPool(0, mockMQ, mockMapper)
 		poolZero.Start()
 		poolZero.Stop()
 		assert.Contains(t, logBuffer.String(), "All workers stopped")

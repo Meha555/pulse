@@ -2,7 +2,7 @@ package client
 
 import (
 	"context"
-	"my-zinx/core"
+	"my-zinx/core/message"
 	"net"
 )
 
@@ -11,6 +11,6 @@ type IClient interface {
 	Start(parent context.Context, fns ...func())
 	Close()
 	Conn() net.TCPConn
-	SendMsg(msg core.IPacket) error
-	RecvMsg(msg core.IPacket) error
+	SendMsg(msg message.IPacket) error
+	RecvMsg(msg message.IPacket) error
 }

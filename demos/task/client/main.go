@@ -6,8 +6,9 @@ import (
 	"example/demos/task"
 	"math/rand/v2"
 	"my-zinx/client"
+	tasking "my-zinx/client/task"
 	"my-zinx/core/message"
-	. "my-zinx/log"
+	. "my-zinx/logging"
 	"my-zinx/server/job"
 	"my-zinx/utils"
 	"time"
@@ -15,8 +16,8 @@ import (
 	"github.com/google/uuid"
 )
 
-var mq = utils.NewBlockingQueue[client.TaskHandler](5)
-var pool = client.NewWorkerPool(3, mq)
+var mq = utils.NewBlockingQueue[func()](5)
+var pool = tasking.NewWorkerPool(3, mq)
 
 func main() {
 	pool.Start()
@@ -49,8 +50,8 @@ func doReceive(cli *client.Client) {
 			continue
 		}
 
-		task := client.GetTask(rsp.ID)
-		if task == nil {
+		task, exists := tasking.TaskTbl.Load(rsp.ID)
+		if !exists {
 			Log.Errorf("task not found: %v", rsp.ID)
 			continue
 		}
@@ -90,7 +91,7 @@ func doCaculate(cli *client.Client, kind uint16) {
 		Log.Infof("Send A = %d, B = %d, kind = %c", A, B, task.KindStr[kind])
 		serial++
 
-		client.NewTask(taskID, func(t *client.Task) error {
+		tasking.NewTask(taskID, func(t *tasking.Task) error {
 			if len(t.Data()) == 0 {
 				return errors.New("task must have data")
 			}
@@ -99,7 +100,7 @@ func doCaculate(cli *client.Client, kind uint16) {
 			rsp := t.Data()[2].(task.Response)
 			Log.Infof("Task[%s] Res: %d %c %d = %d\n", rsp.ID, A, task.KindStr[kind], B, rsp.Res)
 			return nil
-		}, client.WithWorkerPool(pool), client.WithData(A, B))
+		}, tasking.WithWorkerPool(pool), tasking.WithData(A, B))
 
 		time.Sleep(time.Duration(3) * time.Second)
 	}

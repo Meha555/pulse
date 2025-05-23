@@ -1,11 +1,21 @@
 package job
 
 import (
-	"my-zinx/log"
+	"my-zinx/logging"
 	"my-zinx/server/common"
 )
 
-var logger = log.NewStdLogger(log.LevelInfo, "job", "[%t] [%c %l] [%f:%C:%L:%g] %m", false)
+var logger = logging.NewStdLogger(logging.LevelInfo, "job", "[%t] [%c %l] [%f:%C:%L:%g] %m", false)
+
+// IJob 具体的业务逻辑
+type IJob interface {
+	// 处理业务之前的钩子方法
+	PreHandle(req common.IRequest) error
+	// 处理业务的主方法
+	Handle(req common.IRequest) error
+	// 处理业务之后的钩子方法
+	PostHandle(req common.IRequest) error
+}
 
 // 实现 job 时, 先嵌入这个基类, 然后根据需要对这个基类的方法进行重写
 type BaseJob struct{}

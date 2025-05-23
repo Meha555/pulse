@@ -1,15 +1,14 @@
-package core_test
+package message
 
 import (
 	"bytes"
-	"my-zinx/core/message"
 	"testing"
 )
 
 func TestPacket(t *testing.T) {
 	t.Run("Marshal", func(t *testing.T) {
-		p := message.NewPacket([]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
-		data, err := message.Marshal(p)
+		p := NewPacket([]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
+		data, err := Marshal(p)
 		if err != nil {
 			t.Fatalf("Marshal Packet 失败: %v", err)
 		}
@@ -19,8 +18,8 @@ func TestPacket(t *testing.T) {
 	})
 	t.Run("Unmarshal", func(t *testing.T) {
 		data := []byte{10, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-		p := &message.Packet{}
-		err := message.Unmarshal(data, p, true)
+		p := &Packet{}
+		err := Unmarshal(data, p, true)
 		if err != nil {
 			t.Fatalf("Unmarshal Packet 失败: %v", err)
 		}
@@ -35,8 +34,8 @@ func TestPacket(t *testing.T) {
 
 func TestTLVMsg(t *testing.T) {
 	t.Run("Marshal", func(t *testing.T) {
-		tlv := message.NewTLVMsg(1, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
-		data, err := message.Marshal(tlv)
+		tlv := NewTLVMsg(1, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
+		data, err := Marshal(tlv)
 		if err != nil {
 			t.Fatalf("Marshal TLVMsg 失败: %v", err)
 		}
@@ -46,8 +45,8 @@ func TestTLVMsg(t *testing.T) {
 	})
 	t.Run("Unmarshal", func(t *testing.T) {
 		data := []byte{1, 0, 10, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-		tlv := &message.TLVMsg{}
-		err := message.Unmarshal(data, tlv, true)
+		tlv := &TLVMsg{}
+		err := Unmarshal(data, tlv, true)
 		if err != nil {
 			t.Fatalf("Unmarshal TLVMsg 失败: %v", err)
 		}
@@ -65,8 +64,8 @@ func TestTLVMsg(t *testing.T) {
 
 func TestSeqedMsg(t *testing.T) {
 	t.Run("Marshal", func(t *testing.T) {
-		seq := message.NewSeqedMsg(1, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
-		data, err := message.Marshal(seq)
+		seq := NewSeqedMsg(1, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
+		data, err := Marshal(seq)
 		if err != nil {
 			t.Fatalf("Marshal SeqedMsg 失败: %v", err)
 		}
@@ -76,8 +75,8 @@ func TestSeqedMsg(t *testing.T) {
 	})
 	t.Run("Unmarshal", func(t *testing.T) {
 		data := []byte{1, 0, 0, 0, 10, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-		seq := &message.SeqedMsg{}
-		err := message.Unmarshal(data, seq, true)
+		seq := &SeqedMsg{}
+		err := Unmarshal(data, seq, true)
 		if err != nil {
 			t.Fatalf("Unmarshal SeqedMsg 失败: %v", err)
 		}
@@ -95,8 +94,8 @@ func TestSeqedMsg(t *testing.T) {
 
 func TestSeqedTLVMsg(t *testing.T) {
 	t.Run("Marshal", func(t *testing.T) {
-		seqtlv := message.NewSeqedTLVMsg(1, 123, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
-		data, err := message.Marshal(seqtlv)
+		seqtlv := NewSeqedTLVMsg(1, 123, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
+		data, err := Marshal(seqtlv)
 		if err != nil {
 			t.Fatalf("Marshal SeqedTLVMsg 失败: %v", err)
 		}
@@ -106,8 +105,8 @@ func TestSeqedTLVMsg(t *testing.T) {
 	})
 	t.Run("Unmarshal", func(t *testing.T) {
 		data := []byte{1, 0, 0, 0, 123, 0, 10, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-		seqtlv := &message.SeqedTLVMsg{}
-		err := message.Unmarshal(data, seqtlv, true)
+		seqtlv := &SeqedTLVMsg{}
+		err := Unmarshal(data, seqtlv, true)
 		if err != nil {
 			t.Fatalf("Unmarshal SeqedTLVMsg 失败: %v", err)
 		}
