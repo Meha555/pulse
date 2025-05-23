@@ -1,4 +1,8 @@
-package iface
+package common
+
+import (
+	"my-zinx/core"
+)
 
 // 很显然，我们不能把业务处理的方法绑死在type HandlerFunc func(*net.TCPConn, []byte, int) error这种格式中，我们需要定一些interface{}来让用户填写任意格式的连接处理业务方法。
 
@@ -8,7 +12,7 @@ type IRequest interface {
 	// 获取连接
 	Session() ISession
 	// 获取请求数据
-	Msg() ISeqedTLVMsg
+	Msg() core.ISeqedTLVMsg
 	// 设置传递的参数（上下文）
 	Set(key string, value interface{})
 	// 获取传递的参数（上下文）

@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"my-zinx/core/job"
 	"my-zinx/core/message"
-	"my-zinx/core/session"
+	"my-zinx/server/job"
+	"my-zinx/server/session"
 	. "my-zinx/log"
 	"net"
 	"time"

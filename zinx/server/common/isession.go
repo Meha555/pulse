@@ -1,6 +1,7 @@
-package iface
+package common
 
 import (
+	"my-zinx/core"
 	"net"
 
 	"github.com/google/uuid"
@@ -24,8 +25,8 @@ type ISession interface {
 	// 获取可读写的退出chan
 	ExitChan() <-chan struct{}
 
-	SendMsg(msg IPacket) error
-	RecvMsg(msg IPacket) error
+	SendMsg(msg core.IPacket) error
+	RecvMsg(msg core.IPacket) error
 }
 
 // 所有Connection在处理业务时的钩子方法的函数签名

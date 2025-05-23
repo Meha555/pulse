@@ -1,4 +1,4 @@
-package iface
+package core
 
 // Message表示Request中的数据。之前是用 []byte 来在 Request 中接收全部数据，这个结构过于简单。
 // 如果我们能从 Request 结构当中得知消息的类型、长度，那就更好了。

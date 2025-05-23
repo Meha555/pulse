@@ -4,9 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"my-zinx/core/job"
+	"my-zinx/core"
 	"my-zinx/core/message"
-	iface "my-zinx/interface"
+	"my-zinx/server/common"
+	"my-zinx/server/job"
+
 	utils "my-zinx/utils"
 	"net"
 	"sync/atomic"
@@ -27,11 +29,11 @@ type zHooks struct {
 	AfterRecv  SessionHook
 }
 
-type SessionHook func(iface.ISession)
+type SessionHook func(common.ISession)
 type zHookOpt func(c *Session)
 
 // 定义一个空函数
-var noOp SessionHook = func(iface.ISession) {}
+var noOp SessionHook = func(common.ISession) {}
 
 func OnOpen(f SessionHook) zHookOpt {
 	return func(c *Session) {
@@ -176,7 +178,7 @@ func (c *Session) Recv(data []byte) (int, error) {
 	return c.conn.Read(data)
 }
 
-func (c *Session) SendMsg(msg iface.IPacket) error {
+func (c *Session) SendMsg(msg core.IPacket) error {
 	if c.isClosed.Load() {
 		return errors.New("connection is closed")
 	}
@@ -194,7 +196,7 @@ func (c *Session) SendMsg(msg iface.IPacket) error {
 }
 
 // NOTE 这种接口作为传出参数，不用指针可以实现传出修改
-func (c *Session) RecvMsg(msg iface.IPacket) error {
+func (c *Session) RecvMsg(msg core.IPacket) error {
 	if c.isClosed.Load() {
 		return errors.New("connection is closed")
 	}
@@ -225,8 +227,8 @@ func (c *Session) ExitChan() <-chan struct{} {
 	return c.exitCh
 }
 
-// 确保 Connection 实现 iface.IConenction 方法
-var _ iface.ISession = (*Session)(nil)
+// 确保 Connection 实现 IConenction 方法
+var _ common.ISession = (*Session)(nil)
 
 // Reader 是用于读取客户端数据的 Goroutine
 // 会需要与主协程通过chan通信
@@ -243,7 +245,7 @@ func (c *Session) Reader() {
 			return
 		}
 		// 封装请求数据
-		req := message.NewRequest(c, msg)
+		req := NewRequest(c, msg)
 		// 提交给协程池来处理业务
 		c.workerPool.Post(req)
 	}

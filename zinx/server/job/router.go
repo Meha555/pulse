@@ -2,7 +2,8 @@ package job
 
 import (
 	"fmt"
-	iface "my-zinx/interface"
+
+	"my-zinx/server/common"
 	"my-zinx/utils"
 )
 
@@ -15,14 +16,14 @@ const (
 
 type JobRouter struct {
 	// <tag, job>映射表
-	apis utils.Dict[uint16, iface.IJob]
+	apis utils.Dict[uint16, common.IJob]
 }
 
 func NewJobRouter() *JobRouter {
 	return &JobRouter{}
 }
 
-func (r *JobRouter) GetJob(tag uint16) iface.IJob {
+func (r *JobRouter) GetJob(tag uint16) common.IJob {
 	job, ok := r.apis.Load(tag)
 	if !ok {
 		logger.Errorf("get job failed")
@@ -31,12 +32,12 @@ func (r *JobRouter) GetJob(tag uint16) iface.IJob {
 	return job
 }
 
-func (r *JobRouter) AddJob(tag uint16, job iface.IJob) iface.IJobRouter {
+func (r *JobRouter) AddJob(tag uint16, job common.IJob) common.IJobRouter {
 	r.apis.Store(tag, job)
 	return r
 }
 
-func (r *JobRouter) ExecJob(tag uint16, req iface.IRequest) error {
+func (r *JobRouter) ExecJob(tag uint16, req common.IRequest) error {
 	if job, ok := r.apis.Load(tag); ok {
 		if err := job.PreHandle(req); err != nil {
 			return fmt.Errorf("call PreHandle error: %v", err)
@@ -51,5 +52,3 @@ func (r *JobRouter) ExecJob(tag uint16, req iface.IRequest) error {
 	}
 	return fmt.Errorf("no job for tag[%d]", tag)
 }
-
-var _ iface.IJobRouter = (*JobRouter)(nil)

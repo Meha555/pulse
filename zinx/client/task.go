@@ -111,6 +111,7 @@ func (t *Task) AppendData(userData ...interface{}) {
 }
 
 var (
+	// TODO 是否考虑使用sync.Map？
 	taskMap = make(map[uuid.UUID]ITask)
 	mu      sync.Mutex
 )

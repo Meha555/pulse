@@ -1,10 +1,14 @@
 package utils
 
 import (
-	iface "my-zinx/interface"
 	"sync"
 	"sync/atomic"
 )
+
+type IMap[K comparable, V any] interface {
+	Store(key K, value any)
+	Load(key K) (value V, exists bool)
+}
 
 // Dict 并发安全的字典类型
 type Dict[K comparable, V any] struct {
@@ -102,4 +106,4 @@ func (d *Dict[K, V]) Iter() <-chan struct {
 
 // 由于 comparable 不能在类型约束外使用，这里需要使用具体的类型参数。
 // 假设 IMap 接口期望的是具体的可比较类型，这里使用 string 作为示例。
-var _ iface.IMap[string, any] = (*Dict[string, any])(nil)
+var _ IMap[string, any] = (*Dict[string, any])(nil)

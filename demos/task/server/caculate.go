@@ -5,7 +5,8 @@ import (
 	"example/demos/task"
 	"fmt"
 	"my-zinx/core/message"
-	iface "my-zinx/interface"
+	"my-zinx/server/common"
+
 	. "my-zinx/log"
 
 	"github.com/google/uuid"
@@ -16,7 +17,7 @@ type CalculateJob struct {
 	calculator func(uint32, uint32) uint32
 }
 
-func (j *CalculateJob) PreHandle(req iface.IRequest) error {
+func (j *CalculateJob) PreHandle(req common.IRequest) error {
 	var arg task.Request
 	err := arg.UnmarshalBinary(req.Msg().Body())
 	if err != nil {
@@ -28,7 +29,7 @@ func (j *CalculateJob) PreHandle(req iface.IRequest) error {
 	return nil
 }
 
-func (j *CalculateJob) Handle(req iface.IRequest) error {
+func (j *CalculateJob) Handle(req common.IRequest) error {
 	var A, B uint32
 	if a, ok := req.Get("A"); !ok {
 		return errors.New("request.Get(\"A\") failed")
@@ -46,7 +47,7 @@ func (j *CalculateJob) Handle(req iface.IRequest) error {
 	return nil
 }
 
-func (j *CalculateJob) PostHandle(req iface.IRequest) error {
+func (j *CalculateJob) PostHandle(req common.IRequest) error {
 	var ID uuid.UUID
 	if val, ok := req.Get("ID"); !ok {
 		return errors.New("request.Get(\"ID\") failed")
@@ -63,6 +64,7 @@ func (j *CalculateJob) PostHandle(req iface.IRequest) error {
 		ID:  ID,
 		Res: Res,
 	}
+	Log.Warnf("Res: %+v", arg)
 	data, err := arg.MarshalBinary()
 	if err != nil {
 		return fmt.Errorf("response marshal error: %w", err)
@@ -94,7 +96,7 @@ type DivJob struct {
 // Simple Factory
 type CalculateJobFactory struct{}
 
-func (f *CalculateJobFactory) CreateCalculator(tag uint16) iface.IJob {
+func (f *CalculateJobFactory) CreateCalculator(tag uint16) common.IJob {
 	switch tag {
 	case task.AddJobTag:
 		return &AddJob{

@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"my-zinx/core/job"
+	"my-zinx/core"
 	"my-zinx/core/message"
-	iface "my-zinx/interface"
 	log "my-zinx/log"
+	"my-zinx/server/job"
 	"net"
 	"os"
 	"os/signal"
@@ -126,7 +126,7 @@ func (c *Client) Conn() net.TCPConn {
 	return *c.conn
 }
 
-func (c *Client) SendMsg(msg iface.IPacket) error {
+func (c *Client) SendMsg(msg core.IPacket) error {
 	if c.conn == nil {
 		return errors.New("connection is closed")
 	}
@@ -142,7 +142,7 @@ func (c *Client) SendMsg(msg iface.IPacket) error {
 	return nil
 }
 
-func (c *Client) RecvMsg(msg iface.IPacket) error {
+func (c *Client) RecvMsg(msg core.IPacket) error {
 	if c.conn == nil {
 		return errors.New("connection is closed")
 	}
@@ -180,5 +180,3 @@ func (c *Client) heartBeat() {
 		}
 	}
 }
-
-var _ iface.IClient = (*Client)(nil)

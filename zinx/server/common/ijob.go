@@ -1,4 +1,4 @@
-package iface
+package common
 
 // IJob 具体的业务逻辑
 type IJob interface {

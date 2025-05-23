@@ -1,4 +1,4 @@
-package iface
+package core
 
 // IPacket 数据包
 type IPacket interface {

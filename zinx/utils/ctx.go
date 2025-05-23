@@ -1,6 +1,6 @@
 package utils
 
-// import iface "my-zinx/interface"
+// import
 
 // type Context struct {
 // 	mp map[string]any

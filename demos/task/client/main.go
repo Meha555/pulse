@@ -6,9 +6,9 @@ import (
 	"example/demos/task"
 	"math/rand/v2"
 	"my-zinx/client"
-	"my-zinx/core/job"
 	"my-zinx/core/message"
 	. "my-zinx/log"
+	"my-zinx/server/job"
 	"my-zinx/utils"
 	"time"
 

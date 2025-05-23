@@ -1,5 +1,13 @@
 package utils
 
+type IQueue[T any] interface {
+	Push(request T)
+	Pop() T
+	Len() int
+	Cap() int
+	Close()
+}
+
 // 由于是channel，因此内部有锁，是并发安全的
 type BlockingQueue[T any] chan T
 

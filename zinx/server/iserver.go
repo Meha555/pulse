@@ -1,4 +1,4 @@
-package iface
+package server
 
 type IServer interface {
 	// 启动服务器，监听端口

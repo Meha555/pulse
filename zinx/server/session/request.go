@@ -1,20 +1,21 @@
-package message
+package session
 
 import (
 	"context"
-	iface "my-zinx/interface"
+	"my-zinx/core"
+	"my-zinx/server/common"
 )
 
 type Request struct {
 	// 已经和客户端建立好的连接会话
-	session iface.ISession
+	session common.ISession
 	// 客户端请求的数据（要求是顺序的TLV消息）
-	msg iface.ISeqedTLVMsg
+	msg core.ISeqedTLVMsg
 	// 传递的参数（上下文）
 	valueCtx context.Context
 }
 
-func NewRequest(conn iface.ISession, msg iface.ISeqedTLVMsg) *Request {
+func NewRequest(conn common.ISession, msg core.ISeqedTLVMsg) *Request {
 	return &Request{
 		session:  conn,
 		msg:      msg,
@@ -22,11 +23,11 @@ func NewRequest(conn iface.ISession, msg iface.ISeqedTLVMsg) *Request {
 	}
 }
 
-func (r *Request) Session() iface.ISession {
+func (r *Request) Session() common.ISession {
 	return r.session
 }
 
-func (r *Request) Msg() iface.ISeqedTLVMsg {
+func (r *Request) Msg() core.ISeqedTLVMsg {
 	return r.msg
 }
 
@@ -38,6 +39,3 @@ func (r *Request) Get(key string) (value interface{}, exists bool) {
 	value = r.valueCtx.Value(key)
 	return value, value != nil
 }
-
-// 确保 Request 实现了 iface.IRequest 接口
-var _ iface.IRequest = (*Request)(nil)

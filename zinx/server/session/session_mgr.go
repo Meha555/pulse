@@ -1,9 +1,9 @@
 package session
 
 import (
-	"my-zinx/core/job"
 	"my-zinx/core/message"
-	iface "my-zinx/interface"
+	"my-zinx/server/common"
+	"my-zinx/server/job"
 	"my-zinx/utils"
 	"sync"
 	"time"
@@ -14,7 +14,7 @@ import (
 // SessionMgr
 // 支持在添加连接时自动监听其 exitChan，并在 exitCh 关闭时自动删除连接
 type SessionMgr struct {
-	sessionMap map[uuid.UUID]iface.ISession
+	sessionMap map[uuid.UUID]common.ISession
 
 	// 用于心跳检查的定时器
 	heartBeatTicker *time.Ticker
@@ -24,7 +24,7 @@ type SessionMgr struct {
 
 func NewSessionMgr() *SessionMgr {
 	c := &SessionMgr{
-		sessionMap:      make(map[uuid.UUID]iface.ISession),
+		sessionMap:      make(map[uuid.UUID]common.ISession),
 		heartBeatTicker: time.NewTicker(time.Duration(utils.Conf.Server.HeartBeatTick) * time.Second),
 	}
 
@@ -34,7 +34,7 @@ func NewSessionMgr() *SessionMgr {
 			c.mtx.Lock()
 			// 时刻到，检查心跳情况
 			for _, session := range c.sessionMap {
-				go func(session iface.ISession) {
+				go func(session common.ISession) {
 					if session.HeartBeat() < 5 {
 						session.(*Session).heartbeat++
 						session.(*Session).SendMsg(message.NewSeqedTLVMsg(0, job.HeartBeatTag, nil))
@@ -52,7 +52,7 @@ func NewSessionMgr() *SessionMgr {
 	return c
 }
 
-func (c *SessionMgr) Add(session iface.ISession) {
+func (c *SessionMgr) Add(session common.ISession) {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
 	if _, exists := c.sessionMap[session.SessionID()]; exists {
@@ -78,7 +78,7 @@ func (c *SessionMgr) Del(sessionID uuid.UUID) {
 	}
 }
 
-func (c *SessionMgr) Get(sessionID uuid.UUID) iface.ISession {
+func (c *SessionMgr) Get(sessionID uuid.UUID) common.ISession {
 	c.mtx.RLock()
 	defer c.mtx.RUnlock()
 	return c.sessionMap[sessionID]
@@ -102,5 +102,3 @@ func (c *SessionMgr) Clear() {
 	// Wait for all goroutines to finish
 	c.wg.Wait()
 }
-
-var _ iface.ISessionMgr = (*SessionMgr)(nil)

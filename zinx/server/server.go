@@ -2,10 +2,11 @@ package server
 
 import (
 	"fmt"
-	"my-zinx/core/job"
-	"my-zinx/core/session"
-	iface "my-zinx/interface"
+
 	"my-zinx/log"
+	"my-zinx/server/common"
+	"my-zinx/server/job"
+	"my-zinx/server/session"
 	"my-zinx/utils"
 	"net"
 	"os"
@@ -21,16 +22,16 @@ type Server struct {
 	Ip        string
 	Port      uint16
 	// 连接管理器
-	sessionMgr iface.ISessionMgr
+	sessionMgr common.ISessionMgr
 	// 映射请求到具体的API回调
-	jobRouter iface.IJobRouter
+	jobRouter common.IJobRouter
 	// 工作协程池
 	workerPool *job.WorkerPool
 }
 
 func NewServer() *Server {
 	// 消息队列（worker协程从中取数据）mq容量和worker数量相同。mq容量更大没意义
-	mq := utils.NewBlockingQueue[iface.IRequest](int(utils.Conf.Server.MaxWorkerPoolSize))
+	mq := utils.NewBlockingQueue[common.IRequest](int(utils.Conf.Server.MaxWorkerPoolSize))
 	router := job.NewJobRouter()
 	return &Server{
 		Name:       utils.Conf.Server.Name,
@@ -43,7 +44,7 @@ func NewServer() *Server {
 	}
 }
 
-func (s *Server) Route(tag uint16, job iface.IJob) *Server {
+func (s *Server) Route(tag uint16, job common.IJob) *Server {
 	s.jobRouter.AddJob(tag, job)
 	return s
 }
@@ -120,5 +121,5 @@ func (s *Server) ListenAndServe() {
 	s.Serve()
 }
 
-// 确保 Server 实现了 iface.IServer 的所有方法（让编译器帮我们检查）
-var _ iface.IServer = (*Server)(nil)
+// 确保 Server 实现了 IServer 的所有方法（让编译器帮我们检查）
+var _ IServer = (*Server)(nil)
