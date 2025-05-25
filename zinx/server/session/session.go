@@ -244,7 +244,7 @@ func (c *Session) Reader() {
 			return
 		}
 		// 封装请求数据
-		req := NewRequest(c, msg)
+		req := GetRequest(c, msg)
 		// 提交给协程池来处理业务
 		c.workerPool.Post(req)
 	}

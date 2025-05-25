@@ -4,9 +4,9 @@ package utils
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
+	"log"
 
 	"github.com/google/uuid"
 )
@@ -21,6 +21,7 @@ type zServerConf struct {
 	MaxMsgQueueSize   uint   `json:"max_msg_queue_size"`
 	MaxPacketSize     uint32 `json:"max_packet_size"`
 	MaxWorkerPoolSize uint   `json:"max_worker_pool_size"`
+	RequestPoolMode   bool   `json:"request_pool_mode"`
 }
 
 type zLogConf struct {
@@ -67,16 +68,14 @@ func init() {
 			MaxMsgQueueSize:   50,
 			MaxPacketSize:     4096,
 			MaxWorkerPoolSize: 10,
+			RequestPoolMode:   false,
 		},
 		Log: zLogConf{
 			Level:  2,
 			Format: "[%t] [%c %l] [%f:%L:%g] %m",
 		},
 	}
-}
 
-// 这里不用init()函数的原因是，不想让zinx的客户端用这个库也会加载服务端的配置文件
-func Init() {
 	path := os.Getenv("MY_ZINK_CONFIG_PATH")
 	if path == "" {
 		path, _ = os.Getwd()
@@ -84,6 +83,6 @@ func Init() {
 	// 使用 path/filepath 库的 Join 函数来拼接路径，避免路径分隔符数量不对的问题
 	confPath := filepath.Join(path, confFile)
 	if err := Conf.Reload(confPath); err != nil {
-		panic(fmt.Errorf("loading config from %s failed: %w", confPath, err))
+		log.Printf("loading config from %s failed: %v", confPath, err)
 	}
 }

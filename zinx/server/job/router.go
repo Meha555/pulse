@@ -2,9 +2,9 @@ package job
 
 import (
 	"fmt"
-
 	"my-zinx/server/common"
 	"my-zinx/utils"
+	_ "unsafe"
 )
 
 // Api Tags
@@ -50,7 +50,14 @@ func (r *JobRouter) AddJob(tag uint16, job IJob) IJobRouter {
 	return r
 }
 
+//go:linkname PutRequest my-zinx/server/session.PutRequest
+func PutRequest(request common.IRequest)
+
 func (r *JobRouter) ExecJob(tag uint16, req common.IRequest) error {
+	/*
+		回收Request的时候就一定的合适的时机吗？如果只执行路由操作的话是的，但是在Handle中又需要开启一个新的协程去完成某些业务的同时还需要请求中的上下文呢？或者说需要传递请求对象呢？这就会出现生命周期的问题。
+	*/
+	defer PutRequest(req)
 	if job, ok := r.apis.Load(tag); ok {
 		if err := job.PreHandle(req); err != nil {
 			return fmt.Errorf("call PreHandle error: %v", err)
