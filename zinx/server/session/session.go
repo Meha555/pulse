@@ -147,7 +147,7 @@ func (c *Session) Close() {
 	close(c.exitCh)
 }
 
-func (c *Session) SessionID() uuid.UUID {
+func (c *Session) ID() uuid.UUID {
 	return c.sessionID
 }
 

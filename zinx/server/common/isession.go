@@ -15,7 +15,7 @@ type ISession interface {
 	// 停止连接的工作，关闭连接
 	Close()
 	// 获取该对象的唯一标识
-	SessionID() uuid.UUID
+	ID() uuid.UUID
 	// 获取底层的socket
 	Conn() net.Conn
 	// 更新心跳次数

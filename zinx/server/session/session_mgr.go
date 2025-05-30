@@ -40,8 +40,8 @@ func NewSessionMgr() *SessionMgr {
 						session.(*Session).SendMsg(message.NewSeqedTLVMsg(0, job.HeartBeatTag, nil))
 					} else {
 						// 说明已经5 * utils.Conf.Server.HeartBeatTick秒未收到该客户端的心跳包，判定该客户端已经掉线
-						logger.Warnf("Conn %s is timeout, maybe offline", session.SessionID())
-						c.Del(session.SessionID())
+						logger.Warnf("Conn %s is timeout, maybe offline", session.ID())
+						c.Del(session.ID())
 					}
 				}(session)
 			}
@@ -55,10 +55,10 @@ func NewSessionMgr() *SessionMgr {
 func (c *SessionMgr) Add(session common.ISession) {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
-	if _, exists := c.sessionMap[session.SessionID()]; exists {
+	if _, exists := c.sessionMap[session.ID()]; exists {
 		return
 	}
-	c.sessionMap[session.SessionID()] = session
+	c.sessionMap[session.ID()] = session
 
 	// Start a goroutine to listen on the exitCh
 	c.wg.Add(1)
@@ -66,7 +66,7 @@ func (c *SessionMgr) Add(session common.ISession) {
 		defer c.wg.Done()
 		<-session.ExitChan()
 		c.Del(sessionID)
-	}(session.SessionID())
+	}(session.ID())
 }
 
 func (c *SessionMgr) Del(sessionID uuid.UUID) {
