@@ -1,8 +1,8 @@
-# MY-ZINX
+# Pulse
 
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Meha555/my-zinx)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Meha555/pulse)
 
-TCP长连接框架，包含服务器部分和客户端部分。
+Pulse————一个TCP长连接框架，包含服务器部分和客户端部分。
 
 特点：
 - 同时提供客户端SDK和服务端SDK
@@ -28,3 +28,7 @@ TCP长连接框架，包含服务器部分和客户端部分。
 
 - 支持netpoll
 - 框架内置的粘包/残包处理（此前是使用者手动实现的）
+
+## 参考
+
+- [zinx](https://github.com/aceld/zinx)

@@ -2,8 +2,8 @@ package main
 
 import (
 	jobs "example/demos/task"
-	. "my-zinx/logging"
-	"my-zinx/server"
+	. "pulse/logging"
+	"pulse/server"
 )
 
 /*
@@ -29,6 +29,7 @@ import (
 func main() {
 	Log.SetLevel(LevelDebug)
 	s := server.NewServer()
+	s.SetBanner(server.NewBanner())
 	factory := CalculateJobFactory{}
 	s.Route(jobs.AddJobTag, factory.CreateCalculator(jobs.AddJobTag)).
 		Route(jobs.SubJobTag, factory.CreateCalculator(jobs.SubJobTag)).

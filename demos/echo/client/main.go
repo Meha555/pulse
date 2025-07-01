@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"my-zinx/core/message"
-	. "my-zinx/logging"
-	"my-zinx/server/job"
-	"my-zinx/server/session"
 	"net"
+	"pulse/core/message"
+	. "pulse/logging"
+	"pulse/server/job"
+	"pulse/server/session"
 	"time"
 )
 
@@ -47,7 +47,7 @@ func doHeartBeat(conn *session.Session) {
 func doEcho(conn *session.Session, id uint16) {
 	var serial uint32 = 0
 	for {
-		msgSent := message.NewSeqedTLVMsg(serial, id, fmt.Appendf(nil, "hello ZINX [%d]", id))
+		msgSent := message.NewSeqedTLVMsg(serial, id, fmt.Appendf(nil, "hello pulse [%d]", id))
 		data, err := message.Marshal(msgSent)
 		if err != nil {
 			Log.Errorf("Marshal error: %v", err)
@@ -83,9 +83,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"my-zinx/client"
-	"my-zinx/core/message"
-	. "my-zinx/logging"
+	"pulse/client"
+	"pulse/core/message"
+	. "pulse/logging"
 	"time"
 )
 
@@ -99,7 +99,7 @@ func main() {
 func doEcho(cli *client.Client, id uint16) {
 	var serial uint32 = 0
 	for {
-		msgSent := message.NewSeqedTLVMsg(serial, id, fmt.Appendf(nil, "hello ZINX [%d]", id))
+		msgSent := message.NewSeqedTLVMsg(serial, id, fmt.Appendf(nil, "hello pulse [%d]", id))
 		if err := cli.SendMsg(msgSent); err != nil {
 			Log.Errorf("Write error: %v", err)
 			return

@@ -3,11 +3,11 @@ package main
 import (
 	"fmt"
 
-	. "my-zinx/logging"
-	"my-zinx/server"
-	"my-zinx/server/common"
-	"my-zinx/server/job"
-	"my-zinx/server/session"
+	. "pulse/logging"
+	"pulse/server"
+	"pulse/server/common"
+	"pulse/server/job"
+	"pulse/server/session"
 )
 
 type EchoJob struct {

@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"my-zinx/core/message"
 	"net"
+	"pulse/core/message"
 )
 
 func main() {

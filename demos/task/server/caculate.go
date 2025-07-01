@@ -4,11 +4,11 @@ import (
 	"errors"
 	"example/demos/task"
 	"fmt"
-	"my-zinx/core/message"
-	"my-zinx/server/common"
-	"my-zinx/server/job"
+	"pulse/core/message"
+	"pulse/server/common"
+	"pulse/server/job"
 
-	. "my-zinx/logging"
+	. "pulse/logging"
 
 	"github.com/google/uuid"
 )
