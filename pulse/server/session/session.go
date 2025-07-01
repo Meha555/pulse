@@ -8,8 +8,8 @@ import (
 	"pulse/server/common"
 	"pulse/server/job"
 
-	utils "pulse/utils"
 	"net"
+	utils "pulse/utils"
 	"sync/atomic"
 
 	"pulse/logging"
@@ -18,57 +18,6 @@ import (
 )
 
 var logger = logging.NewStdLogger(logging.LevelInfo, "session", "[%t] [%c %l] [%f:%C:%L:%g] %m", false)
-
-type zHooks struct {
-	OnOpen     SessionHook
-	OnClose    SessionHook
-	BeforeSend SessionHook
-	BeforeRecv SessionHook
-	AfterSend  SessionHook
-	AfterRecv  SessionHook
-}
-
-type SessionHook func(common.ISession)
-type zHookOpt func(c *Session)
-
-// 定义一个空函数
-var noOp SessionHook = func(common.ISession) {}
-
-func OnOpen(f SessionHook) zHookOpt {
-	return func(c *Session) {
-		c.hookStub.OnOpen = f
-	}
-}
-
-func OnClose(f SessionHook) zHookOpt {
-	return func(c *Session) {
-		c.hookStub.OnClose = f
-	}
-}
-
-func BeforeSend(f SessionHook) zHookOpt {
-	return func(c *Session) {
-		c.hookStub.BeforeSend = f
-	}
-}
-
-func BeforeRecv(f SessionHook) zHookOpt {
-	return func(c *Session) {
-		c.hookStub.BeforeRecv = f
-	}
-}
-
-func AfterSend(f SessionHook) zHookOpt {
-	return func(c *Session) {
-		c.hookStub.AfterSend = f
-	}
-}
-
-func AfterRecv(f SessionHook) zHookOpt {
-	return func(c *Session) {
-		c.hookStub.AfterRecv = f
-	}
-}
 
 // Session
 // 将裸的TCP socket包装，将具体的业务与连接绑定
@@ -90,10 +39,10 @@ type Session struct {
 	// 通知该连接已经停止
 	exitCh chan struct{}
 
-	hookStub zHooks
+	hookStub hooks
 }
 
-func NewSession(conn *net.TCPConn, workerPool *job.WorkerPool, opts ...zHookOpt) *Session {
+func NewSession(conn *net.TCPConn, workerPool *job.WorkerPool, hookOpts ...hookOpt) *Session {
 	c := &Session{
 		conn:       conn,
 		sessionID:  uuid.New(),
@@ -102,17 +51,17 @@ func NewSession(conn *net.TCPConn, workerPool *job.WorkerPool, opts ...zHookOpt)
 		workerPool: workerPool,
 		msgCh:      make(chan []byte, utils.Conf.Server.MaxMsgQueueSize), // 这里设置缓冲区大小为10，允许读写协程的处理速率有一定的差异
 		exitCh:     make(chan struct{}, 1),                               // 这里设置为 1，确保至少有一个缓冲区，防止写入时没人读导致阻塞，或者反之
-		hookStub: zHooks{
-			OnOpen:     noOp,
-			OnClose:    noOp,
-			BeforeSend: noOp,
-			BeforeRecv: noOp,
-			AfterSend:  noOp,
-			AfterRecv:  noOp,
+		hookStub: hooks{
+			onOpen:     noOp,
+			onClose:    noOp,
+			beforeSend: noOp,
+			beforeRecv: noOp,
+			afterSend:  noOp,
+			afterRecv:  noOp,
 		},
 	}
 
-	for _, opt := range opts {
+	for _, opt := range hookOpts {
 		opt(c)
 	}
 
@@ -124,7 +73,7 @@ func (c *Session) Open() error {
 	go c.Reader()
 	go c.Writer()
 
-	c.hookStub.OnOpen(c)
+	c.hookStub.onOpen(c)
 
 	// 等待 Stop() 方法通知退出
 	for range c.exitCh {
@@ -139,7 +88,7 @@ func (c *Session) Close() {
 	}
 	c.isClosed.Store(true)
 
-	c.hookStub.OnClose(c)
+	c.hookStub.onClose(c)
 
 	c.conn.Close()
 	c.exitCh <- struct{}{} // 通知 Open() 方法退出
@@ -181,8 +130,8 @@ func (c *Session) SendMsg(msg message.IPacket) error {
 	if c.isClosed.Load() {
 		return errors.New("connection is closed")
 	}
-	c.hookStub.BeforeSend(c)
-	defer c.hookStub.AfterSend(c)
+	c.hookStub.beforeSend(c)
+	defer c.hookStub.afterSend(c)
 	data, err := message.Marshal(msg)
 	if err != nil {
 		return err
@@ -199,8 +148,8 @@ func (c *Session) RecvMsg(msg message.IPacket) error {
 	if c.isClosed.Load() {
 		return errors.New("connection is closed")
 	}
-	c.hookStub.BeforeRecv(c)
-	defer c.hookStub.AfterRecv(c)
+	c.hookStub.beforeRecv(c)
+	defer c.hookStub.afterRecv(c)
 	headerData := make([]byte, msg.HeaderLen())
 	if _, err := io.ReadFull(c.conn, headerData); err != nil {
 		return fmt.Errorf("read header error: %w", err)
