@@ -1,8 +1,8 @@
-# Pulse
+# github.com/Meha555/pulse
 
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Meha555/pulse)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Meha555/github.com/Meha555/pulse)
 
-Pulse————一个TCP长连接框架，包含服务器部分和客户端部分。
+github.com/Meha555/pulse————一个TCP长连接框架，包含服务器部分和客户端部分。
 
 特点：
 - 同时提供客户端SDK和服务端SDK

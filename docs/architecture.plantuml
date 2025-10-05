@@ -1,5 +1,5 @@
 @startuml
-package "pulse TCP服务器框架" {
+package "github.com/Meha555/pulse TCP服务器框架" {
     component "服务端套接字" as serverSocket
     component "TCP客户端连接" as clientConnection
     component "Reader协程" as readerCoroutine
